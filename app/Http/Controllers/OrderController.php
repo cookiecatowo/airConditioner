@@ -47,6 +47,17 @@ class OrderController extends Controller
         ]);
     }
 
+    public function show(Order $order)
+    {
+        $order = $this->loadOrderFullDetails($order);
+        $shop = ShopSetting::first();
+
+        return Inertia::render('Orders/Show', [
+            'order' => $order,
+            'shop' => $shop
+        ]);
+    }
+
     public function edit(Order $order)
     {
         $order = $this->loadOrderFullDetails($order);
