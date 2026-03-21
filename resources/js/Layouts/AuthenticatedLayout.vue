@@ -37,7 +37,13 @@ const showingNavigationDropdown = ref(false);
                                     :href="route('dashboard')"
                                     :active="route().current('dashboard')"
                                 >
-                                    Dashboard
+                                    控制台
+                                </NavLink>
+                                <NavLink
+                                    :href="route('shop-settings.edit')"
+                                    :active="route().current('shop-settings.*')"
+                                >
+                                    店家資訊
                                 </NavLink>
                             </div>
                         </div>
@@ -74,14 +80,14 @@ const showingNavigationDropdown = ref(false);
                                         <DropdownLink
                                             :href="route('profile.edit')"
                                         >
-                                            Profile
+                                            個人資料
                                         </DropdownLink>
                                         <DropdownLink
                                             :href="route('logout')"
                                             method="post"
                                             as="button"
                                         >
-                                            Log Out
+                                            登出
                                         </DropdownLink>
                                     </template>
                                 </Dropdown>
