@@ -18,14 +18,14 @@ class Order extends Model
     public function equipments()
     {
         return $this->belongsToMany(Equipment::class, 'order_equipment')
-                    ->withPivot('cost_price', 'sale_price', 'quantity')
+                    ->withPivot('cost_price', 'sale_price', 'quantity', 'is_adjustment', 'item_note')
                     ->withTimestamps();
     }
 
     public function materials()
     {
         return $this->belongsToMany(Material::class, 'order_material')
-                    ->withPivot('unit_price', 'quantity')
+                    ->withPivot('unit_price', 'quantity', 'is_adjustment', 'item_note')
                     ->withTimestamps();
     }
 }

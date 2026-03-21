@@ -82,8 +82,8 @@ const getTypeName = (type) => {
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">${{ order.total_amount }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium">
                                             <div class="flex justify-center gap-3">
-                                                <button class="text-indigo-600 hover:text-indigo-900">Word</button>
-                                                <button class="text-gray-600 hover:text-gray-900">詳情</button>
+                                                <a :href="route('orders.export', order.id)" class="text-indigo-600 hover:text-indigo-900 font-bold">Word</a>
+                                                <Link :href="route('orders.edit', order.id)" class="text-gray-600 hover:text-gray-900">編輯</Link>
                                             </div>
                                         </td>
                                     </tr>
