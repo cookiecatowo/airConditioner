@@ -34,22 +34,28 @@ const showingNavigationDropdown = ref(false);
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
+                                    :href="route('orders.create')"
+                                    :active="route().current('orders.create')"
                                 >
-                                    控制台
+                                    新增報價單
                                 </NavLink>
                                 <NavLink
-                                    :href="route('shop-settings.edit')"
-                                    :active="route().current('shop-settings.*')"
+                                    :href="route('orders.index')"
+                                    :active="route().current('orders.index')"
                                 >
-                                    店家資訊
+                                    報價單列表
                                 </NavLink>
                                 <NavLink
                                     :href="route('brands.index')"
                                     :active="route().current('brands.*') || route().current('materials.*')"
                                 >
                                     設備與材料
+                                </NavLink>
+                                <NavLink
+                                    :href="route('shop-settings.edit')"
+                                    :active="route().current('shop-settings.*')"
+                                >
+                                    店家資訊
                                 </NavLink>
                             </div>
                         </div>
@@ -153,22 +159,28 @@ const showingNavigationDropdown = ref(false);
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
+                            :href="route('orders.create')"
+                            :active="route().current('orders.create')"
                         >
-                            控制台
+                            新增報價單
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            :href="route('shop-settings.edit')"
-                            :active="route().current('shop-settings.*')"
+                            :href="route('orders.index')"
+                            :active="route().current('orders.index')"
                         >
-                            店家資訊
+                            報價單列表
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="route('brands.index')"
                             :active="route().current('brands.*') || route().current('materials.*')"
                         >
                             設備與材料
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('shop-settings.edit')"
+                            :active="route().current('shop-settings.*')"
+                        >
+                            店家資訊
                         </ResponsiveNavLink>
                     </div>
 

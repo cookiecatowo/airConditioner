@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ShopSettingController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\BrandEquipmentController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShopSettingController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,6 +34,18 @@ Route::middleware('auth')->group(function () {
 
     // 材料管理
     Route::resource('materials', MaterialController::class);
+
+    // 報價單管理
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    // 動態搜尋 API (回傳 JSON)
+    Route::get('/api/search/customers', [OrderController::class, 'searchCustomers']);
+    Route::get('/api/search/brands', [OrderController::class, 'searchBrands']);
+    Route::get('/api/search/equipments', [OrderController::class, 'searchEquipments']);
+    Route::get('/api/search/materials', [OrderController::class, 'searchMaterials']);
 });
 
 require __DIR__.'/auth.php';

@@ -313,8 +313,8 @@ const formatPrice = (price) => {
                                             </thead>
                                             <tbody class="divide-y divide-gray-200">
                                                 <tr v-for="equip in equips" :key="equip.id" class="hover:bg-white transition">
-                                                    <td class="px-4 py-3 text-sm text-gray-900">{{ equip.specs || '未標註' }}</td>
-                                                    <td class="px-4 py-3 text-sm text-right text-gray-900">{{ formatPrice(equip.default_cost_price) }}</td>
+                                                            <td class="px-4 py-3 text-sm text-gray-900">{{ equip.specs || '' }}</td>
+                                                            <td class="px-4 py-3 text-sm text-right text-gray-600">{{ formatPrice(equip.default_cost_price) }}</td>
                                                     <td class="px-4 py-3 text-sm text-right text-gray-900 font-bold">{{ formatPrice(equip.default_sale_price) }}</td>
                                                     <td class="px-4 py-3 text-sm text-center font-medium">
                                                         <button @click="openEquipModal(brand.id, equip)" class="text-blue-600 hover:text-blue-900 mr-3">編輯</button>
@@ -353,7 +353,7 @@ const formatPrice = (price) => {
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="material in filteredMaterials" :key="material.id" class="hover:bg-gray-50 transition">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ material.name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ material.specs || '-' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ material.specs || '' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ material.unit || '-' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-bold">{{ formatPrice(material.default_unit_price) }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium">
