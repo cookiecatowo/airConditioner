@@ -45,6 +45,12 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     店家資訊
                                 </NavLink>
+                                <NavLink
+                                    :href="route('brands.index')"
+                                    :active="route().current('brands.*') || route().current('materials.*')"
+                                >
+                                    設備與材料
+                                </NavLink>
                             </div>
                         </div>
 
@@ -157,6 +163,12 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('shop-settings.*')"
                         >
                             店家資訊
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('brands.index')"
+                            :active="route().current('brands.*') || route().current('materials.*')"
+                        >
+                            設備與材料
                         </ResponsiveNavLink>
                     </div>
 
