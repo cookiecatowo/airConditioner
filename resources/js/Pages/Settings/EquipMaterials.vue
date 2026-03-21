@@ -141,12 +141,27 @@ const deleteMaterial = (id) => {
 // --- 搜尋過濾 ---
 const filteredBrands = computed(() => {
     if (!searchQuery.value) return props.brands;
-    return props.brands.filter(b => b.name.includes(searchQuery.value));
+    const query = searchQuery.value.toLowerCase();
+    
+    return props.brands.map(brand => {
+        // 過濾出符合系列名稱或規格的設備
+        const matchingEquips = brand.equipments.filter(e => 
+            (e.model_name && e.model_name.toLowerCase().includes(query)) || 
+            (e.specs && e.specs.toLowerCase().includes(query))
+        );
+        
+        // 如果該品牌下有匹配的設備，則回傳該品牌(僅含匹配設備)
+        if (matchingEquips.length > 0) {
+            return { ...brand, equipments: matchingEquips };
+        }
+        return null;
+    }).filter(brand => brand !== null);
 });
 
 const filteredMaterials = computed(() => {
     if (!searchQuery.value) return props.materials;
-    return props.materials.filter(m => m.name.includes(searchQuery.value));
+    const query = searchQuery.value.toLowerCase();
+    return props.materials.filter(m => m.name.toLowerCase().includes(query));
 });
 
 // --- 展開/收合邏輯 ---
@@ -194,7 +209,7 @@ const formatPrice = (price) => {
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <!-- 頁籤與搜尋欄 -->
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                    <div class="flex bg-white rounded-lg p-1 shadow">
+                    <div class="flex bg-white rounded-lg p-1 shadow md:w-[320px]">
                         <button 
                             @click="activeTab = 'equipments'"
                             :class="activeTab === 'equipments' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-blue-600'"
@@ -210,24 +225,24 @@ const formatPrice = (price) => {
                             材料清單
                         </button>
                     </div>
-
-                    <div class="w-full md:w-64">
-                        <TextInput 
-                            v-model="searchQuery" 
-                            type="text" 
-                            class="w-full" 
-                            placeholder="搜尋名稱..." 
-                        />
-                    </div>
-
-                    <div>
-                        <PrimaryButton v-if="activeTab === 'equipments'" @click="openBrandModal()">
-                            新增品牌
-                        </PrimaryButton>
-                        <PrimaryButton v-else @click="openMaterialModal()">
-                            新增材料
-                        </PrimaryButton>
-                    </div>
+                    <div class="w-full flex items-center mr-2">
+                        <div class="w-full m-2">
+                            <TextInput 
+                                v-model="searchQuery" 
+                                type="text" 
+                                class="w-full" 
+                                placeholder="搜尋名稱/規格..." 
+                            />
+                        </div>
+                        <div>
+                            <PrimaryButton class="w-[88px]" v-if="activeTab === 'equipments'" @click="openBrandModal()">
+                                新增品牌
+                            </PrimaryButton>
+                            <PrimaryButton class="w-[88px]" v-else @click="openMaterialModal()">
+                                新增材料
+                            </PrimaryButton>
+                        </div>
+                    </div> 
                 </div>
 
                 <!-- 品牌與設備內容 -->
@@ -296,7 +311,7 @@ const formatPrice = (price) => {
                         </div>
                     </div>
                     <div v-if="filteredBrands.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-                        <p class="text-gray-500">找不到符合搜尋條件的品牌</p>
+                        <p class="text-gray-500">找不到符合搜尋條件的設備</p>
                     </div>
                 </div>
 
