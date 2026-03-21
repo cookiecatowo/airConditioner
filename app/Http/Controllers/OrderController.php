@@ -125,9 +125,11 @@ class OrderController extends Controller
 
                     if ($equipmentId) {
                         $order->equipments()->attach($equipmentId, [
+                            'custom_name' => $item['model_name'],
                             'cost_price' => $item['cost_price'] ?? 0,
                             'sale_price' => $item['sale_price'],
                             'quantity' => $item['quantity'],
+                            'item_note' => $item['item_note'] ?? null,
                         ]);
                         $totalAmount += $item['sale_price'] * $item['quantity'];
                     }
@@ -143,6 +145,7 @@ class OrderController extends Controller
                             'custom_name' => $item['name'],
                             'unit_price' => $item['unit_price'],
                             'quantity' => $item['quantity'] ?? 1,
+                            'item_note' => $item['item_note'] ?? null,
                         ]);
                         $totalAmount += $item['unit_price'] * ($item['quantity'] ?? 1);
                         continue;
@@ -162,8 +165,10 @@ class OrderController extends Controller
 
                     if ($materialId) {
                         $order->materials()->attach($materialId, [
+                            'custom_name' => $item['name'],
                             'unit_price' => $item['unit_price'],
                             'quantity' => $item['quantity'],
+                            'item_note' => $item['item_note'] ?? null,
                         ]);
                         $totalAmount += $item['unit_price'] * $item['quantity'];
                     }
@@ -201,17 +206,35 @@ class OrderController extends Controller
             $query->where('brand_id', $request->brand_id);
         }
 
-        return $query->where(function($q) use ($request) {
-                $q->where('model_name', 'like', "%{$request->q}%")
-                  ->orWhere('specs', 'like', "%{$request->q}%");
-            })
-            ->limit(20)->get();
+        if ($request->q) {
+            $keywords = explode(' ', $request->q);
+            foreach ($keywords as $keyword) {
+                if (empty($keyword)) continue;
+                $query->where(function($q) use ($keyword) {
+                    $q->where('model_name', 'like', "%{$keyword}%")
+                      ->orWhere('specs', 'like', "%{$keyword}%");
+                });
+            }
+        }
+
+        return $query->limit(20)->get();
     }
 
     public function searchMaterials(Request $request)
     {
-        return Material::where('name', 'like', "%{$request->q}%")
-            ->orWhere('specs', 'like', "%{$request->q}%")
-            ->limit(20)->get();
+        $query = Material::query();
+        
+        if ($request->q) {
+            $keywords = explode(' ', $request->q);
+            foreach ($keywords as $keyword) {
+                if (empty($keyword)) continue;
+                $query->where(function($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%")
+                      ->orWhere('specs', 'like', "%{$keyword}%");
+                });
+            }
+        }
+
+        return $query->limit(20)->get();
     }
 }
