@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -33,6 +33,23 @@ const customerSuggestions = ref([]);
 const brandSuggestions = ref([]);
 const equipmentSuggestions = ref([]);
 const materialSuggestions = ref([]);
+
+const clearSuggestions = () => {
+    customerSuggestions.value = [];
+    brandSuggestions.value = [];
+    equipmentSuggestions.value = [];
+    materialSuggestions.value = [];
+};
+
+// 點擊外部關閉建議
+const handleClickOutside = (e) => {
+    if (!e.target.closest('.relative') && !e.target.closest('ul')) {
+        clearSuggestions();
+    }
+};
+
+onMounted(() => document.addEventListener('click', handleClickOutside));
+onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 
 const searchCustomers = async (q) => {
     if (q.length < 1) { customerSuggestions.value = []; return; }
@@ -179,16 +196,16 @@ watch(() => form.type, (t) => {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="relative">
                             <InputLabel value="顧客姓名" required />
-                            <TextInput v-model="form.customer_name" @input="searchCustomers(form.customer_name)" class="w-full mt-1" />
+                            <TextInput v-model="form.customer_name" @input="searchCustomers(form.customer_name)" @keydown.enter.prevent class="w-full mt-1" />
                             <ul v-if="customerSuggestions.length > 0" class="absolute z-10 w-full bg-white border rounded shadow-lg mt-1">
                                 <li v-for="c in customerSuggestions" :key="c.id" @click="selectCustomer(c)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ c.name }} - {{ c.phone }}</li>
                             </ul>
                         </div>
-                        <div><InputLabel value="聯絡電話" /><TextInput v-model="form.customer_phone" class="w-full mt-1" /></div>
-                        <div><InputLabel value="統一編號" /><TextInput v-model="form.customer_tax_id" class="w-full mt-1" /></div>
-                        <div class="md:col-span-2"><InputLabel value="施工地址" required /><TextInput v-model="form.address" class="w-full mt-1" /></div>
-                        <div class="md:col-span-2"><InputLabel value="報單備註 (顯示)" /><TextInput v-model="form.public_notes" class="w-full mt-1" /></div>
-                        <div><InputLabel value="建單日期" required /><TextInput type="date" v-model="form.date" class="w-full mt-1" /></div>
+                        <div><InputLabel value="聯絡電話" /><TextInput v-model="form.customer_phone" @keydown.enter.prevent class="w-full mt-1" /></div>
+                        <div><InputLabel value="統一編號" /><TextInput v-model="form.customer_tax_id" @keydown.enter.prevent class="w-full mt-1" /></div>
+                        <div class="md:col-span-2"><InputLabel value="施工地址" required /><TextInput v-model="form.address" @keydown.enter.prevent class="w-full mt-1" /></div>
+                        <div class="md:col-span-2"><InputLabel value="報單備註 (顯示)" /><TextInput v-model="form.public_notes" @keydown.enter.prevent class="w-full mt-1" /></div>
+                        <div><InputLabel value="建單日期" required /><TextInput type="date" v-model="form.date" @keydown.enter.prevent class="w-full mt-1" /></div>
                         <div>
                             <InputLabel value="訂單類型" required />
                             <div class="mt-2 flex gap-4">
@@ -215,12 +232,12 @@ watch(() => form.type, (t) => {
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" class="w-full border-amber-300"/></div>
                             </div>
                             <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="relative"><InputLabel value="品牌" /><TextInput v-model="equip.brand_name" @input="searchBrands(i, equip.brand_name)" class="w-full" /><ul v-if="brandSuggestions.length > 0 && brandSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="b in brandSuggestions" :key="b.id" @click="selectBrand(i, b)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ b.name }}</li></ul></div>
-                                <div class="relative"><InputLabel value="型號" /><TextInput v-model="equip.model_name" @input="searchEquipments(i, equip.model_name)" class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
-                                <div class="relative"><InputLabel value="規格" /><TextInput v-model="equip.specs" @input="searchEquipments(i, equip.specs)" class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
-                                <div class="grid grid-cols-2 gap-2"><div><InputLabel value="進價" /><TextInput type="number" v-model="equip.cost_price" class="w-full bg-gray-100" /></div><div><InputLabel value="售價" /><TextInput type="number" v-model="equip.sale_price" class="w-full border-blue-200" /></div></div>
-                                <div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" class="w-full" /></div>
-                                <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" class="w-full"/></div>
+                                <div class="relative"><InputLabel value="品牌" /><TextInput v-model="equip.brand_name" @input="searchBrands(i, equip.brand_name)" @keydown.enter.prevent class="w-full" /><ul v-if="brandSuggestions.length > 0 && brandSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="b in brandSuggestions" :key="b.id" @click="selectBrand(i, b)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ b.name }}</li></ul></div>
+                                <div class="relative"><InputLabel value="型號" /><TextInput v-model="equip.model_name" @input="searchEquipments(i, equip.model_name)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
+                                <div class="relative"><InputLabel value="規格" /><TextInput v-model="equip.specs" @input="searchEquipments(i, equip.specs)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
+                                <div class="grid grid-cols-2 gap-2"><div><InputLabel value="進價" /><TextInput type="number" v-model="equip.cost_price" @keydown.enter.prevent class="w-full bg-gray-100" /></div><div><InputLabel value="售價" /><TextInput type="number" v-model="equip.sale_price" @keydown.enter.prevent class="w-full border-blue-200" /></div></div>
+                                <div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div>
+                                <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" @keydown.enter.prevent class="w-full"/></div>
                             </div>
                     </div>
                 </div>
@@ -237,12 +254,12 @@ watch(() => form.type, (t) => {
                         <table class="min-w-full">
                             <thead><tr class="text-left text-xs text-gray-500 uppercase"><th>名稱</th><th>規格</th><th class="w-16">單位</th><th class="w-24">單價/金額</th><th class="w-24">數量</th><th>備註</th><th class="w-8"></th></tr></thead>
                             <tbody><tr v-for="(mat, i) in form.materials" :key="i" :class="{'bg-amber-50/50': mat.is_adjustment}">
-                                <td class="py-2 pr-2 relative"><TextInput v-model="mat.name" @input="searchMaterials(i, mat.name); checkAndAddMaterialRow(i)" class="w-full" :placeholder="mat.is_adjustment ? '調整名稱' : ''" /><ul v-if="!mat.is_adjustment && materialSuggestions.length > 0 && materialSuggestions[0].targetIndex === i" class="absolute z-[100] w-64 bg-white border rounded shadow-lg mt-1"><li v-for="m in materialSuggestions" :key="m.id" @click="selectMaterial(i, m)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ m.name }} - {{ m.specs }}</li></ul></td>
-                                <td class="py-2 pr-2 relative"><TextInput v-model="mat.specs" @input="searchMaterials(i, mat.specs)" class="w-full" :disabled="mat.is_adjustment" /><ul v-if="!mat.is_adjustment && materialSuggestions.length > 0 && materialSuggestions[0].targetIndex === i" class="absolute z-[100] w-64 bg-white border rounded shadow-lg mt-1"><li v-for="m in materialSuggestions" :key="m.id" @click="selectMaterial(i, m)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ m.name }} - {{ m.specs }}</li></ul></td>
-                                <td class="py-2 pr-2"><TextInput v-model="mat.unit" class="w-full" :disabled="mat.is_adjustment" /></td>
-                                <td class="py-2 pr-2"><TextInput type="number" v-model="mat.unit_price" class="w-full font-bold" /></td>
-                                <td class="py-2 pr-2"><TextInput type="number" v-model="mat.quantity" class="w-full" :disabled="mat.is_adjustment" /></td>
-                                <td class="py-2 pr-2"><TextInput v-model="mat.item_note" class="w-full" placeholder="備註" /></td>
+                                <td class="py-2 pr-2 relative"><TextInput v-model="mat.name" @input="searchMaterials(i, mat.name); checkAndAddMaterialRow(i)" @keydown.enter.prevent class="w-full" :placeholder="mat.is_adjustment ? '調整名稱' : ''" /><ul v-if="!mat.is_adjustment && materialSuggestions.length > 0 && materialSuggestions[0].targetIndex === i" class="absolute z-[100] w-64 bg-white border rounded shadow-lg mt-1"><li v-for="m in materialSuggestions" :key="m.id" @click="selectMaterial(i, m)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ m.name }} - {{ m.specs }}</li></ul></td>
+                                <td class="py-2 pr-2 relative"><TextInput v-model="mat.specs" @input="searchMaterials(i, mat.specs)" @keydown.enter.prevent class="w-full" :disabled="mat.is_adjustment" /><ul v-if="!mat.is_adjustment && materialSuggestions.length > 0 && materialSuggestions[0].targetIndex === i" class="absolute z-[100] w-64 bg-white border rounded shadow-lg mt-1"><li v-for="m in materialSuggestions" :key="m.id" @click="selectMaterial(i, m)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ m.name }} - {{ m.specs }}</li></ul></td>
+                                <td class="py-2 pr-2"><TextInput v-model="mat.unit" @keydown.enter.prevent class="w-full" :disabled="mat.is_adjustment" /></td>
+                                <td class="py-2 pr-2"><TextInput type="number" v-model="mat.unit_price" @keydown.enter.prevent class="w-full font-bold" /></td>
+                                <td class="py-2 pr-2"><TextInput type="number" v-model="mat.quantity" @keydown.enter.prevent class="w-full" :disabled="mat.is_adjustment" /></td>
+                                <td class="py-2 pr-2"><TextInput v-model="mat.item_note" @keydown.enter.prevent class="w-full" placeholder="備註" /></td>
                                 <td><button @click="removeMaterial(i)" type="button" class="text-red-500 text-sm">刪</button></td>
                             </tr></tbody>
                         </table>
