@@ -165,6 +165,18 @@ const onDragEnd = () => {
     dragItem.value = null; dragOverItem.value = null;
 };
 
+const matDragItem = ref(null);
+const matDragOverItem = ref(null);
+const onMatDragStart = (i) => matDragItem.value = i;
+const onMatDragEnter = (i) => matDragOverItem.value = i;
+const onMatDragEnd = () => {
+    if (matDragItem.value !== null && matDragOverItem.value !== null) {
+        const item = form.materials.splice(matDragItem.value, 1)[0];
+        form.materials.splice(matDragOverItem.value, 0, item);
+    }
+    matDragItem.value = null; matDragOverItem.value = null;
+};
+
 const submit = () => form.post(route('orders.store'));
 
 // 初始化
@@ -224,8 +236,12 @@ watch(() => form.type, (t) => {
                             <SecondaryButton @click="addEquipment">+ 新項目</SecondaryButton>
                         </div>
                     </div>
-                    <div v-for="(equip, i) in form.equipments" :key="i" draggable="true" @dragstart="onDragStart(i)" @dragenter="onDragEnter(i)" @dragend="onDragEnd" @dragover.prevent class="mb-4 p-4 bg-gray-50 rounded-lg relative cursor-move">
-                        <button @click="removeEquipment(i)" type="button" class="absolute top-2 right-2 text-red-400 text-xs">移除</button>
+                    <div v-for="(equip, i) in form.equipments" :key="i" @dragover.prevent @dragenter="onDragEnter(i)" class="mb-4 p-4 bg-gray-50 rounded-lg relative flex gap-4 items-start border border-transparent transition" :class="{'border-blue-300 bg-blue-50/30': dragOverItem === i}">
+                        <!-- 拖曳手把 -->
+                        <div draggable="true" @dragstart="onDragStart(i)" @dragend="onDragEnd" class="cursor-grab active:cursor-grabbing p-2 text-gray-400 hover:text-blue-500 text-xl select-none">⠿</div>
+                        
+                        <div class="flex-1 relative">
+                            <button @click="removeEquipment(i)" type="button" class="absolute -top-2 -right-2 text-red-400 text-xs hover:text-red-600">移除</button>
                             <div v-if="equip.is_adjustment" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div><InputLabel value="名稱" /><TextInput v-model="equip.model_name" class="w-full border-amber-300" /></div>
                                 <div><InputLabel value="金額" /><TextInput type="number" v-model="equip.sale_price" class="w-full border-amber-300" /></div>
@@ -239,6 +255,7 @@ watch(() => form.type, (t) => {
                                 <div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div>
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" @keydown.enter.prevent class="w-full"/></div>
                             </div>
+                        </div>
                     </div>
                 </div>
                 <!-- 材料 -->
@@ -252,8 +269,9 @@ watch(() => form.type, (t) => {
                     </div>
                     <div class="overflow-visible">
                         <table class="min-w-full">
-                            <thead><tr class="text-left text-xs text-gray-500 uppercase"><th>名稱</th><th>規格</th><th class="w-16">單位</th><th class="w-24">單價/金額</th><th class="w-24">數量</th><th>備註</th><th class="w-8"></th></tr></thead>
-                            <tbody><tr v-for="(mat, i) in form.materials" :key="i" :class="{'bg-amber-50/50': mat.is_adjustment}">
+                            <thead><tr class="text-left text-xs text-gray-500 uppercase"><th class="w-8"></th><th>名稱</th><th>規格</th><th class="w-16">單位</th><th class="w-24">單價/金額</th><th class="w-24">數量</th><th>備註</th><th class="w-8"></th></tr></thead>
+                            <tbody><tr v-for="(mat, i) in form.materials" :key="i" :class="{'bg-amber-50/50': mat.is_adjustment, 'outline outline-2 outline-blue-400 bg-blue-50/50 z-10 relative': matDragOverItem === i}" @dragover.prevent @dragenter="onMatDragEnter(i)">
+                                <td class="py-2 text-center"><div draggable="true" @dragstart="onMatDragStart(i)" @dragend="onMatDragEnd" class="cursor-grab active:cursor-grabbing text-gray-400 hover:text-blue-500 select-none">⠿</div></td>
                                 <td class="py-2 pr-2 relative"><TextInput v-model="mat.name" @input="searchMaterials(i, mat.name); checkAndAddMaterialRow(i)" @keydown.enter.prevent class="w-full" :placeholder="mat.is_adjustment ? '調整名稱' : ''" /><ul v-if="!mat.is_adjustment && materialSuggestions.length > 0 && materialSuggestions[0].targetIndex === i" class="absolute z-[100] w-64 bg-white border rounded shadow-lg mt-1"><li v-for="m in materialSuggestions" :key="m.id" @click="selectMaterial(i, m)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ m.name }} - {{ m.specs }}</li></ul></td>
                                 <td class="py-2 pr-2 relative"><TextInput v-model="mat.specs" @input="searchMaterials(i, mat.specs)" @keydown.enter.prevent class="w-full" :disabled="mat.is_adjustment" /><ul v-if="!mat.is_adjustment && materialSuggestions.length > 0 && materialSuggestions[0].targetIndex === i" class="absolute z-[100] w-64 bg-white border rounded shadow-lg mt-1"><li v-for="m in materialSuggestions" :key="m.id" @click="selectMaterial(i, m)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ m.name }} - {{ m.specs }}</li></ul></td>
                                 <td class="py-2 pr-2"><TextInput v-model="mat.unit" @keydown.enter.prevent class="w-full" :disabled="mat.is_adjustment" /></td>
