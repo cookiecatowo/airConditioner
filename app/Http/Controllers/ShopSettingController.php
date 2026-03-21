@@ -34,6 +34,7 @@ class ShopSettingController extends Controller
             'shop_phone' => 'nullable|string|max:255',
             'bank_name' => 'nullable|string|max:255',
             'bank_account' => 'nullable|string|max:255',
+            'bank_account_name' => 'nullable|string|max:255',
         ]);
 
         foreach ($validated as $key => $value) {

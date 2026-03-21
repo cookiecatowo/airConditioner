@@ -50,7 +50,7 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $order = $this->loadOrderFullDetails($order);
-        $shop = ShopSetting::first();
+        $shop = ShopSetting::all()->pluck('value', 'key');
 
         return Inertia::render('Orders/Show', [
             'order' => $order,
@@ -304,27 +304,41 @@ class OrderController extends Controller
 
     private function generateWordReport($order)
     {
-        $shop = ShopSetting::first();
+        $shop = ShopSetting::all()->pluck('value', 'key');
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Microsoft JhengHei');
         $phpWord->setDefaultFontSize(11);
 
         $section = $phpWord->addSection(['marginTop' => 1134, 'marginBottom' => 1134, 'marginLeft' => 1134, 'marginRight' => 1134]);
         $section->addText($order->report_title, ['size' => 20, 'bold' => true], ['alignment' => 'center']);
+        // 標題下方的雙線 (滿版)
+        $styleTableTitle = ['borderBottomSize' => 18, 'borderBottomColor' => '000000', 'borderBottomStyle' => 'double'];
+        $titleLineTable = $section->addTable(['width' => 100 * 50, 'unit' => 'pct']);
+        $titleLineTable->addRow();
+        $titleLineTable->addCell(10000, $styleTableTitle);
         $section->addTextBreak(1);
 
         $tableInfo = $section->addTable(['width' => 100 * 50, 'unit' => 'pct']);
         $tableInfo->addRow();
-        $tableInfo->addCell(5000)->addText("顧客姓名：{$order->customer->name}");
-        $tableInfo->addCell(5000)->addText("報價日期：{$order->date}", null, ['alignment' => 'right']);
-        $tableInfo->addRow();
-        $tableInfo->addCell(5000)->addText("聯絡電話：{$order->customer->phone}");
-        $tableInfo->addCell(5000)->addText("施工地址：{$order->address}", null, ['alignment' => 'right']);
-        if ($order->tax_id) {
-            $tableInfo->addRow();
-            $tableInfo->addCell(5000)->addText("統一編號：{$order->tax_id}");
-            $tableInfo->addCell(5000);
-        }
+        
+        // 左欄 (60%)
+        $leftHeaderCell = $tableInfo->addCell(6000, ['valign' => 'bottom']);
+        // 第一行：姓名 (左) 與 台照 (右)
+        $innerTable = $leftHeaderCell->addTable(['width' => 100 * 50, 'unit' => 'pct']);
+        $innerTable->addRow();
+        $innerTable->addCell(4000)->addText($order->customer->name, ['size' => 14, 'bold' => true], ['borderBottomSize' => 6]);
+        $innerTable->addCell(1000)->addText("台照", ['size' => 11], ['alignment' => 'right']);
+        $leftHeaderCell->addTextBreak(1);
+        // 第二行：日期
+        $leftHeaderCell->addText("建單日期：{$order->date}", ['size' => 11]);
+
+        // 右欄 (40%)
+        $rightHeaderCell = $tableInfo->addCell(4000, ['valign' => 'top']);
+        $rightHeaderCell->addText("電話：{$order->customer->phone}", ['size' => 10]);
+        $rightHeaderCell->addText("地址：{$order->address}", ['size' => 10]);
+        $rightHeaderCell->addText("備註：{$order->public_notes}", ['size' => 10]);
+        $rightHeaderCell->addText("統編：{$order->tax_id}", ['size' => 10]);
+        
         $section->addTextBreak(1);
 
         $styleTable = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 80];
@@ -392,12 +406,20 @@ class OrderController extends Controller
         $table->addCell(3200, ['gridSpan' => 2])->addText('$' . number_format($order->total_amount), ['bold' => true, 'size' => 14, 'color' => '0000FF'], ['alignment' => 'right']);
 
         if ($order->public_notes) { $section->addTextBreak(1); $section->addText("備註：{$order->public_notes}", ['bold' => true]); }
-        $section->addTextBreak(2);
-        if ($shop) {
-            $footerTable = $section->addTable(['width' => 100 * 50, 'unit' => 'pct']);
-            $footerTable->addRow(); $footerTable->addCell(5000)->addText("服務單位：{$shop->shop_name}"); $footerTable->addCell(5000)->addText("負責人：{$shop->owner_name}");
-            $footerTable->addRow(); $footerTable->addCell(5000)->addText("聯絡電話：{$shop->phone}"); $footerTable->addCell(5000)->addText("公司地址：{$shop->address}");
-            $footerTable->addRow(); $footerTable->addCell(5000)->addText("匯款銀行：{$shop->bank_name}"); $footerTable->addCell(5000)->addText("帳號：{$shop->bank_account}");
+        $section->addTextBreak(1);
+
+        if ($shop->isNotEmpty()) {
+            // 稅務與匯款資訊
+            $section->addText("1. 本報價單不含5%營業稅", ['size' => 10]);
+            $bankInfo = "匯款帳戶: " . ($shop['bank_name'] ?? '') . " " . ($shop['bank_account_name'] ?? '') . " " . ($shop['bank_account'] ?? '');
+            $section->addText($bankInfo, ['size' => 10]);
+            $section->addTextBreak(1);
+
+            // 簽章與店家資訊 (兩行上下排列，皆靠右對齊)
+            $section->addText("客戶簽章：____________________        客戶簽章：____________________", ['size' => 11], ['alignment' => 'right']);
+            
+            $shopInfo = ($shop['shop_name'] ?? '') . "  TEL:" . ($shop['shop_phone'] ?? '') . "  " . ($shop['owner_name'] ?? '') . "  " . ($shop['shop_address'] ?? '');
+            $section->addText($shopInfo, ['size' => 11], ['alignment' => 'right']);
         }
 
         $filename = "{$order->date}-{$order->customer->name}-報價單.docx";

@@ -24,6 +24,7 @@ const form = useForm({
     shop_phone: props.settings.shop_phone || '',
     bank_name: props.settings.bank_name || '',
     bank_account: props.settings.bank_account || '',
+    bank_account_name: props.settings.bank_account_name || '',
 });
 
 const submit = () => {
@@ -103,7 +104,7 @@ const submit = () => {
                                 <InputError class="mt-2" :message="form.errors.shop_phone" />
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <InputLabel for="bank_name" value="匯款銀行" />
                                     <TextInput
@@ -114,6 +115,16 @@ const submit = () => {
                                         placeholder="例：玉山銀行"
                                     />
                                     <InputError class="mt-2" :message="form.errors.bank_name" />
+                                </div>
+                                <div>
+                                    <InputLabel for="bank_account_name" value="戶名" />
+                                    <TextInput
+                                        id="bank_account_name"
+                                        type="text"
+                                        class="mt-1 block w-full"
+                                        v-model="form.bank_account_name"
+                                    />
+                                    <InputError class="mt-2" :message="form.errors.bank_account_name" />
                                 </div>
                                 <div>
                                     <InputLabel for="bank_account" value="匯款帳號" />

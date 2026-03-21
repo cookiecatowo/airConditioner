@@ -64,29 +64,34 @@ const materialsTotal = computed(() => {
                     <div class="bg-white shadow-2xl p-[1.5cm] w-[210mm] min-h-[297mm] text-black border border-gray-300 relative print:shadow-none print:p-0 print:border-none paper">
                         
                         <!-- 報單標題 -->
-                        <div class="text-center mb-6">
-                            <h1 class="text-4xl font-serif font-black tracking-[0.8em] border-b-4 border-double border-black pb-2 inline-block">
+                        <div class="text-center mb-6 border-b-4 border-double border-black pb-2">
+                            <h1 class="text-4xl font-bold tracking-[1.2em]">
                                 {{ order.report_title }}
                             </h1>
                         </div>
 
-                        <!-- 抬頭資訊表格 -->
-                        <table class="w-full mb-4 text-[15px] leading-relaxed text-left">
-                            <tr>
-                                <td class="w-1/2 py-1">顧客姓名：<span class="border-b border-black inline-block min-w-[150px]">{{ order.customer.name }}</span></td>
-                                <td class="w-1/2 text-right py-1">報價日期：<span class="border-b border-black inline-block min-w-[120px]">{{ order.date }}</span></td>
-                            </tr>
-                            <tr>
-                                <td class="py-1">聯絡電話：<span class="border-b border-black inline-block min-w-[150px]">{{ order.customer.phone }}</span></td>
-                                <td class="text-right py-1">統一編號：<span class="border-b border-black inline-block min-w-[120px]">{{ order.tax_id || '　' }}</span></td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" class="py-1">施工地址：<span class="border-b border-black inline-block min-w-[85%] font-medium">{{ order.address }}</span></td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" class="py-1">備註說明：<span class="border-b border-black inline-block min-w-[85%]">{{ order.public_notes || '　' }}</span></td>
-                            </tr>
-                        </table>
+                        <!-- 抬頭資訊 (3:2 兩欄佈局) -->
+                        <div class="flex mb-6 text-[15px] leading-relaxed">
+                            <!-- 左欄 (60%) -->
+                            <div class="w-[50%] pr-4 flex flex-col justify-end">
+                                <div class="border-b border-black pb-1 flex justify-between items-end mb-4">
+                                    <span class="text-2xl">{{ order.customer.name }}</span>
+                                    <span class="text-2xl">台照</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="whitespace-nowrap">建單日期：</span>
+                                    <span class="flex-grow">{{ order.date }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 右欄 (40%) -->
+                            <div class="w-[50%] text-[13px] space-y-0.5 pl-4">
+                                <div class="flex"><span class="w-10 shrink-0">電話：</span><span class="break-all">{{ order.customer.phone }}</span></div>
+                                <div class="flex"><span class="w-10 shrink-0">地址：</span><span class="break-all">{{ order.address }}</span></div>
+                                <div class="flex"><span class="w-10 shrink-0">備註：</span><span class="break-all">{{ order.public_notes || '　' }}</span></div>
+                                <div class="flex"><span class="w-10 shrink-0">統編：</span><span class="break-all">{{ order.tax_id || '　' }}</span></div>
+                            </div>
+                        </div>
 
                         <!-- 主明細表格 -->
                         <table class="w-full border-collapse border-[1.5px] border-black text-[13px] text-center">
@@ -159,13 +164,22 @@ const materialsTotal = computed(() => {
                         </table>
 
                         <!-- 頁尾店家資訊 -->
-                        <div v-if="shop" class="mt-8 pt-4 border-t-2 border-double border-black grid grid-cols-2 gap-y-1 text-[13px] font-medium leading-relaxed">
-                            <div class="col-span-1">服務單位：{{ shop.shop_name }}</div>
-                            <div class="col-span-1">負責人：{{ shop.owner_name }}</div>
-                            <div class="col-span-1">聯絡電話：{{ shop.phone }}</div>
-                            <div class="col-span-1">公司地址：{{ shop.address }}</div>
-                            <div class="col-span-1">匯款銀行：{{ shop.bank_name }}</div>
-                            <div class="col-span-1">匯款帳號：{{ shop.bank_account }}</div>
+                        <div class="mt-4 text-[14px] leading-relaxed">
+                            <div class="mb-4">
+                                <p>1. 本報價單不含5%營業稅</p>
+                                <div class="flex gap-2">
+                                    <p class="font-bold">匯款帳戶:</p><p>{{ shop.bank_name }} {{ shop.bank_account_name }} {{ shop.bank_account }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-right space-y-3">
+                                <div class="text-[18px]">
+                                    客戶簽章：____________________
+                                </div>
+                                <div class="text-[14px]">
+                                    <span class="font-bold">{{ shop.shop_name }}</span>
+                                    &nbsp; TEL:{{ shop.shop_phone }} &nbsp; {{ shop.owner_name }} &nbsp; {{ shop.shop_address }}
+                                </div>
+                            </div>
                         </div>
 
                     </div>
