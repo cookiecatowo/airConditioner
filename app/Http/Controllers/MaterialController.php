@@ -14,6 +14,8 @@ class MaterialController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'specs' => 'nullable|string|max:255',
+            'unit' => 'nullable|string|max:50',
             'default_unit_price' => 'nullable|numeric|min:0',
         ]);
 
@@ -29,6 +31,8 @@ class MaterialController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'specs' => 'nullable|string|max:255',
+            'unit' => 'nullable|string|max:50',
             'default_unit_price' => 'nullable|numeric|min:0',
         ]);
 

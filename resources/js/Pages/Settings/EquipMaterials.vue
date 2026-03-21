@@ -106,13 +106,19 @@ const showMaterialModal = ref(false);
 const editingMaterial = ref(null);
 const materialForm = useForm({
     name: '',
+    specs: '',
+    unit: '',
     default_unit_price: 0,
 });
+
+const commonUnits = ['台', '式', '組', '米', '條', '個', '箱'];
 
 const openMaterialModal = (material = null) => {
     editingMaterial.value = material;
     if (material) {
         materialForm.name = material.name;
+        materialForm.specs = material.specs;
+        materialForm.unit = material.unit;
         materialForm.default_unit_price = material.default_unit_price;
     } else {
         materialForm.reset();
@@ -150,7 +156,7 @@ const filteredBrands = computed(() => {
             (e.specs && e.specs.toLowerCase().includes(query))
         );
         
-        // 如果該品牌下有匹配的設備，則回傳該品牌(僅含匹配設備)
+        // 如果該品牌下有匹配的設備，則回傳該 brand
         if (matchingEquips.length > 0) {
             return { ...brand, equipments: matchingEquips };
         }
@@ -161,7 +167,10 @@ const filteredBrands = computed(() => {
 const filteredMaterials = computed(() => {
     if (!searchQuery.value) return props.materials;
     const query = searchQuery.value.toLowerCase();
-    return props.materials.filter(m => m.name.toLowerCase().includes(query));
+    return props.materials.filter(m => 
+        (m.name && m.name.toLowerCase().includes(query)) || 
+        (m.specs && m.specs.toLowerCase().includes(query))
+    );
 });
 
 // --- 展開/收合邏輯 ---
@@ -186,6 +195,18 @@ const groupedEquipments = (equipments) => {
             groups[e.model_name] = [];
         }
         groups[e.model_name].push(e);
+    });
+    return groups;
+};
+
+// 將材料按名稱分組
+const groupedMaterials = (materials) => {
+    const groups = {};
+    materials.forEach(m => {
+        if (!groups[m.name]) {
+            groups[m.name] = [];
+        }
+        groups[m.name].push(m);
     });
     return groups;
 };
@@ -318,28 +339,34 @@ const formatPrice = (price) => {
                 <!-- 材料列表內容 -->
                 <div v-if="activeTab === 'materials'" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">材料名稱</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">預設單價</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="material in filteredMaterials" :key="material.id" class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ material.name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-bold">{{ formatPrice(material.default_unit_price) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium">
-                                        <button @click="openMaterialModal(material)" class="text-blue-600 hover:text-blue-900 mr-3">編輯</button>
-                                        <button @click="deleteMaterial(material.id)" class="text-red-600 hover:text-red-900">刪除</button>
-                                    </td>
-                                </tr>
-                                <tr v-if="filteredMaterials.length === 0">
-                                    <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">尚無材料資料</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">材料名稱</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">規格</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">單位</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">預設單價</th>
+                                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="material in filteredMaterials" :key="material.id" class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ material.name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ material.specs || '-' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ material.unit || '-' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-bold">{{ formatPrice(material.default_unit_price) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium">
+                                            <button @click="openMaterialModal(material)" class="text-blue-600 hover:text-blue-900 mr-3">編輯</button>
+                                            <button @click="deleteMaterial(material.id)" class="text-red-600 hover:text-red-900">刪除</button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredMaterials.length === 0">
+                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">尚無材料資料</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -417,6 +444,27 @@ const formatPrice = (price) => {
                         <InputLabel for="mat_name" value="材料名稱" />
                         <TextInput id="mat_name" v-model="materialForm.name" class="mt-1 block w-full" required />
                         <InputError :message="materialForm.errors.name" class="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel for="mat_specs" value="規格" />
+                        <TextInput id="mat_specs" v-model="materialForm.specs" class="mt-1 block w-full" placeholder="例如：2分3分 / 5米" />
+                        <InputError :message="materialForm.errors.specs" class="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel for="mat_unit" value="單位" />
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button 
+                                v-for="u in commonUnits" :key="u"
+                                type="button"
+                                @click="materialForm.unit = u"
+                                :class="materialForm.unit === u ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                class="px-3 py-1 rounded text-sm transition"
+                            >
+                                {{ u }}
+                            </button>
+                        </div>
+                        <TextInput id="mat_unit" v-model="materialForm.unit" class="mt-2 block w-full" placeholder="或自行輸入單位" />
+                        <InputError :message="materialForm.errors.unit" class="mt-2" />
                     </div>
                     <div>
                         <div class="flex justify-between items-center">

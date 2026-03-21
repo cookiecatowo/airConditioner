@@ -17,7 +17,7 @@ class BrandEquipmentController extends Controller
     {
         return Inertia::render('Settings/EquipMaterials', [
             'brands' => Brand::with('equipments')->orderBy('id', 'desc')->get(),
-            'materials' => Material::orderBy('id', 'desc')->get(),
+            'materials' => Material::orderBy('name', 'asc')->orderBy('specs', 'asc')->get(),
         ]);
     }
 
