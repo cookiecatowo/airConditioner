@@ -150,7 +150,13 @@ const showingNavigationDropdown = ref(false);
                             :href="route('dashboard')"
                             :active="route().current('dashboard')"
                         >
-                            Dashboard
+                            控制台
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('shop-settings.edit')"
+                            :active="route().current('shop-settings.*')"
+                        >
+                            店家資訊
                         </ResponsiveNavLink>
                     </div>
 
@@ -171,14 +177,14 @@ const showingNavigationDropdown = ref(false);
 
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink :href="route('profile.edit')">
-                                Profile
+                                個人資料
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
                             >
-                                Log Out
+                                登出
                             </ResponsiveNavLink>
                         </div>
                     </div>
