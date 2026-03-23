@@ -201,7 +201,25 @@ const onMatDragEnd = () => {
     matDragItem.value = null; matDragOverItem.value = null;
 };
 
-const submit = () => form.put(route('orders.update', props.order.id));
+const submit = () => {
+    // 驗證設備品牌
+    if (form.type === 'install') {
+        for (let i = 0; i < form.equipments.length; i++) {
+            const e = form.equipments[i];
+            if (!e.is_adjustment && e.model_name) {
+                if (!e.brand_name || e.brand_name.trim() === '') {
+                    alert(`第 ${i + 1} 項設備未填寫品牌，請確認！`);
+                    return;
+                }
+                // 確保 brand_id 攜帶品牌名稱或 ID 傳回後端
+                if (!e.brand_id) {
+                    e.brand_id = e.brand_name;
+                }
+            }
+        }
+    }
+    form.put(route('orders.update', props.order.id));
+};
 
 // 初始化時補上一行空白材料
 if (form.materials.length === 0) addMaterial();

@@ -235,9 +235,17 @@ class OrderController extends Controller
                     $totalAmount += ($item['sale_price'] ?? 0);
                 } else {
                     $specs = !empty($item['specs']) ? $item['specs'] : null;
+                    
+                    // 處理品牌：如果 brand_id 是字串（新品牌名稱），則建立它
+                    $brandId = $item['brand_id'] ?? null;
+                    if (!is_numeric($brandId) && !empty($brandId)) {
+                        $brand = \App\Models\Brand::firstOrCreate(['name' => $brandId]);
+                        $brandId = $brand->id;
+                    }
+
                     $masterEq = Equipment::firstOrCreate(
-                        ['model_name' => $item['model_name'], 'specs' => $specs],
-                        ['brand_id' => $item['brand_id'] ?? null, 'default_cost_price' => $item['cost_price'] ?? 0, 'default_sale_price' => $item['sale_price'] ?? 0]
+                        ['model_name' => $item['model_name'], 'specs' => $specs, 'brand_id' => $brandId],
+                        ['default_cost_price' => $item['cost_price'] ?? 0, 'default_sale_price' => $item['sale_price'] ?? 0]
                     );
                     DB::table('order_equipment')->insert([
                         'order_id' => $order->id,
