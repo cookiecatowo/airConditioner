@@ -315,8 +315,8 @@ if (form.materials.length === 0) addMaterial();
                                     <td class="border border-black py-1">{{ eq.item_note }}</td>
                                 </tr>
                                 <tr class="border border-black font-bold bg-gray-50/50">
-                                    <td colspan="4" class="border border-black py-1 text-center">小計</td>
-                                    <td colspan="2" class="border border-black py-1">{{ equipmentsTotal }}</td>
+                                    <td colspan="2" class="border border-black py-1 text-center">小計</td>
+                                    <td colspan="4" class="border border-black py-1">{{ equipmentsTotal }}</td>
                                 </tr>
                             </template>
                             <template v-if="visibleMaterials.length > 0">
@@ -327,13 +327,13 @@ if (form.materials.length === 0) addMaterial();
                                     <td class="border border-black py-1">{{ mat.item_note }}</td>
                                 </tr>
                                 <tr class="border border-black font-bold bg-gray-50/50">
-                                    <td colspan="4" class="border border-black py-1 text-center">小計</td>
-                                    <td colspan="2" class="border border-black py-1">{{ materialsTotal }}</td>
+                                    <td colspan="2" class="border border-black py-1 text-center">小計</td>
+                                    <td colspan="4" class="border border-black py-1">{{ materialsTotal }}</td>
                                 </tr>
                             </template>
                             <tr class="border border-black font-black text-lg bg-blue-50/30">
-                                <td colspan="5" class="border border-black py-2 text-center">總計</td>
-                                <td colspan="2" class="border border-black py-2 text-blue-700 font-bold">${{ totalAmount }}</td>
+                                <td colspan="3" class="border border-black py-2 text-center">總計</td>
+                                <td colspan="4" class="border border-black py-2 text-blue-700 font-bold">${{ totalAmount }}</td>
                             </tr>
                         </tbody>
                     </table>
