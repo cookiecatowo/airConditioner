@@ -1,0 +1,8 @@
+.git
+node_modules
+vendor
+public/build
+storage/*.sqlite
+.env
+.phpunit.result.cache
+docker-compose.override.yml
