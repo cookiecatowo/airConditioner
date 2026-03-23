@@ -1,59 +1,82 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## 空調安裝維修報價系統 (Air Conditioning Quotation System)
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+    <img src="https://img.shields.io/badge/Built%20with-Gemini%20CLI-blueviolet?style=flat&logo=google-gemini" alt="Built with Gemini CLI">
+    <img src="https://img.shields.io/badge/Laravel-12.x-red" alt="Laravel 12">
+    <img src="https://img.shields.io/badge/Vue-3.x-green" alt="Vue 3">
+    <img src="https://img.shields.io/badge/Tailwind-CSS-blue" alt="Tailwind CSS">
+    <img src="https://img.shields.io/badge/Database-SQLite-lightgrey" alt="SQLite">
 </p>
 
-## About Laravel
+本系統是專為**空調工程、安裝與維修**設計的自動化報價管理系統。基於最新的 Laravel 12 與 Vue 3 (Inertia.js) 構建，旨在簡化工程報價流程、確保歷史資料準確性，並能產出符合業界標準的專業 Word 報價單。
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 核心功能
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+*   **專業報價單管理**：支援兩階段檢視（網頁版快速預覽 + A4 紙張高度還原模擬）。
+*   **資料快照機制 (Snapshot)**：成交當下的價格、規格、地址、統編將被永久鎖定，不受未來基礎資料異動影響。
+*   **靈活調整項 (Adjustments)**：支援手動輸入資料庫以外的特殊項目（如：折扣、特殊工資、吊車費等）。
+*   **智慧連動輸入**：
+    *   **顧客連動**：輸入姓名自動帶入電話、地址與統編。
+    *   **設備連動**：自動根據品牌帶入型號前綴。
+    *   **動態材料行**：輸入完成自動新增下一行，提升錄入效率。
+*   **專業報表導出**：一鍵導出為 Word 格式 (`.docx`)，樣式完全對標 A4 預覽版。
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🛠️ 技術棧
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 後端 (Backend)
+*   **Framework**: [Laravel 12](https://laravel.com)
+*   **Packages**:
+    *   `phpoffice/phpword`: 用於生成高品質 Word 報價文件。
+    *   `inertiajs/inertia-laravel`: 打造無縫的單頁應用 (SPA) 體驗。
+    *   `tightenco/ziggy`: 在 JavaScript 中直接使用 Laravel 路由。
 
-## Laravel Sponsors
+### 前端 (Frontend)
+*   **Framework**: [Vue 3 (Composition API)](https://vuejs.org)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com)
+*   **Bundler**: [Vite 7](https://vitejs.dev)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 基礎設施 (Infrastructure)
+*   **Database**: SQLite (專為輕量、高效與易於轉移設計)。
+*   **Containerization**: Docker (生產環境等級封裝)。
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 📦 環境安裝 (Docker)
 
-## Contributing
+本專案已完成生產環境封裝，只需一條指令即可完成所有套件安裝、前端編譯與資料庫初始化。
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 1. 系統要求
+*   已安裝 [Docker](https://www.docker.com/) 與 [Docker Compose](https://docs.docker.com/compose/)。
 
-## Code of Conduct
+### 2. 一鍵啟動
+在專案根目錄執行：
+```bash
+docker compose up -d --build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+此指令將自動完成：
+*   **前端編譯**：執行 `npm run build` 生成最佳化的 JS/CSS。
+*   **後端優化**：執行 `composer install --optimize-autoloader`。
+*   **環境初始化**：自動生成 `APP_KEY`、建立 `database.sqlite` 並執行資料庫遷移 (`migrate`)。
 
-## Security Vulnerabilities
+啟動後，請訪問：[http://localhost](http://localhost)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 📖 開發與維護規範 (GEMINI.md)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+本專案遵循嚴格的開發規範，詳細邏輯請參考 `GEMINI.md`：
+*   **兩層階層設備管理**：品牌 -> 設備系列 -> 具體規格。
+*   **A4 預覽規範**：固定 `210mm x 297mm` 比例，字體優先採用「新細明體」。
+*   **表格對齊**：報價單內文字一律靠中對齊。
+*   **手動項處理**：特殊項目 ID 為 `NULL`，存取時跳過 Eloquent 關聯，使用原生 Query Builder 確保系統不崩潰。
+
+---
+
+## 📄 License
+
+The Laravel framework is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
