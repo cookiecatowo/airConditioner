@@ -121,11 +121,11 @@ const checkAndAddMaterialRow = (index) => {
 
 // --- 操作 ---
 const addEquipment = () => {
-    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, item_note: '', is_adjustment: false });
+    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: false });
 };
 
 const addAdjustmentEquipment = () => {
-    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, item_note: '', is_adjustment: true });
+    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: true });
 };
 
 const removeEquipment = (index) => {
@@ -198,7 +198,20 @@ const submit = () => {
 };
 
 // 初始化
-addMaterial();
+const defaultMaterials = [
+    { id: null, name: '被覆銅管', specs: '2分4分', unit: '米',  unit_price: 500,  quantity: 7,  item_note: '', is_adjustment: false },
+    { id: null, name: '被覆銅管', specs: '2分3分', unit: '米',  unit_price: 400,  quantity: 23, item_note: '', is_adjustment: false },
+    { id: null, name: '安裝工資', specs: '',        unit: '台',  unit_price: 3500, quantity: 3,  item_note: '', is_adjustment: false },
+    { id: null, name: '安裝架',   specs: '',        unit: '組',  unit_price: 1500, quantity: 3,  item_note: '', is_adjustment: false },
+    { id: null, name: '控制線電源線',    specs: '', unit: '式',  unit_price: 1500, quantity: 1,  item_note: '', is_adjustment: false },
+    { id: null, name: '牆壁挖孔及修補', specs: '', unit: '式',  unit_price: 3000, quantity: 1,  item_note: '', is_adjustment: false },
+    { id: null, name: '洗孔',           specs: '', unit: '',    unit_price: 800,  quantity: 1,  item_note: '', is_adjustment: false },
+    { id: null, name: '壁掛排水工程',   specs: '打牆及修補', unit: '', unit_price: 1500, quantity: 1, item_note: '', is_adjustment: false },
+    { id: null, name: '室內管槽', specs: '百合白',  unit: '台',  unit_price: 3000, quantity: 4,  item_note: '選配', is_adjustment: false },
+    { id: null, name: '室外管槽', specs: '',        unit: '式',  unit_price: 5000, quantity: 1,  item_note: '選配', is_adjustment: false },
+    { id: null, name: '', specs: '', unit: '組', unit_price: 0, quantity: 1, item_note: '', is_adjustment: false },
+];
+form.materials = defaultMaterials;
 if (form.type === 'install') addEquipment();
 watch(() => form.type, (t) => {
     if (t === 'repair') form.equipments = [];
@@ -270,7 +283,7 @@ watch(() => form.type, (t) => {
                                 <div class="relative"><InputLabel value="型號" /><TextInput v-model="equip.model_name" @input="searchEquipments(i, equip.model_name)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
                                 <div class="relative"><InputLabel value="規格" /><TextInput v-model="equip.specs" @input="searchEquipments(i, equip.specs)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
                                 <div class="grid grid-cols-2 gap-2"><div><InputLabel value="進價" /><TextInput type="number" v-model="equip.cost_price" @keydown.enter.prevent class="w-full bg-gray-100" /></div><div><InputLabel value="售價" /><TextInput type="number" v-model="equip.sale_price" @keydown.enter.prevent class="w-full border-blue-200" /></div></div>
-                                <div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div>
+                                <div class="grid grid-cols-2 gap-2"><div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div><div><InputLabel value="單位" /><TextInput v-model="equip.unit" @keydown.enter.prevent class="w-full" placeholder="台" /></div></div>
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" @keydown.enter.prevent class="w-full"/></div>
                             </div>
                         </div>
@@ -312,7 +325,7 @@ watch(() => form.type, (t) => {
                                 <tr v-for="(eq, i) in visibleEquipments" :key="'e'+i" class="border border-black">
                                     <td v-if="i===0" :rowspan="visibleEquipments.length + 1" class="border border-black py-1"></td>
                                     <template v-if="eq.is_adjustment"><td colspan="2" class="border border-black px-2 py-1">{{ eq.model_name }}</td><td colspan="3" class="border border-black px-2 py-1 font-bold">{{ eq.sale_price }}</td></template>
-                                    <template v-else><td class="border border-black px-2 py-1">{{ eq.model_name }}</td><td class="border border-black py-1">{{ eq.specs }}</td><td class="border border-black py-1">{{ eq.quantity }} 台</td><td class="border border-black px-2 py-1">{{ eq.sale_price }}</td><td class="border border-black px-2 py-1">{{ eq.sale_price * eq.quantity }}</td></template>
+                                    <template v-else><td class="border border-black px-2 py-1">{{ eq.model_name }}</td><td class="border border-black py-1">{{ eq.specs }}</td><td class="border border-black py-1">{{ eq.quantity }} {{ eq.unit || '台' }}</td><td class="border border-black px-2 py-1">{{ eq.sale_price }}</td><td class="border border-black px-2 py-1">{{ eq.sale_price * eq.quantity }}</td></template>
                                     <td class="border border-black px-2 py-1">{{ eq.item_note }}</td>
                                 </tr>
                                 <tr class="border border-black font-bold bg-gray-50/50">

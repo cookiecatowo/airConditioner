@@ -1,3 +1,42 @@
+# ❄️ 空調報價系統開發手冊 (GEMINI.md)
+
+## 📅 2026-04-06 狀態更新
+- **進度**：已完成「報價單新增功能 1.0」。
+- **重點修正**：電話 (`customer_phone`) 與地址 (`install_address`) 改為 **nullable (選填)**，解決存檔報錯。
+- **架構對應**：Docker 三階段建構已設定完成 (PHP -> Node -> Runtime)。
+
+---
+
+## 🛠️ 系統重要線路圖 (核心檔案路徑)
+
+1. **神經中樞 (路由)**: `routes/web.php`
+   - 控制網址 `/quotations/create` (看頁面) 與 `POST /quotations` (存檔)。
+
+2. **邏輯大腦 (控制器)**: `app/Http/Controllers/QuotationController.php`
+   - 負責驗證資料、計算總額 (`price * quantity`) 並寫入資料庫。
+
+3. **保險箱規則 (模型)**: `app/Models/Quotation.php`
+   - 定義哪些欄位可以寫入 (fillable)，包含：姓名、型號、單價、數量、總額、備註。
+
+4. **系統參數 (身分證)**: `.env`
+   - 資料庫連線 (SQLite/MySQL) 與 APP_KEY 都在這設定。
+
+---
+
+## 🚀 常用維護指令 (龍哥專用)
+- **改完畫面要編譯**：`npm run build`
+- **資料庫格式化/更新**：`php artisan migrate:refresh`
+- **Docker 啟動/更新**：`docker compose up -d --build`
+- **查看系統日誌**：`docker logs air-app`
+
+---
+
+## 📝 待辦事項 (TODO)
+- [ ] 測試資料庫數據寫入是否正確。
+- [ ] 開發「報價單列表」頁面。
+- [ ] 增加 Word/PDF 匯出功能。
+
+
 # 空調安裝維修報價系統 - 開發手冊 (GEMINI.md)
 
 ## 專案概述

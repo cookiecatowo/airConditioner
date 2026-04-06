@@ -23,6 +23,7 @@ const initialEquipments = props.order.equipments.map(e => ({
     cost_price: e.pivot.cost_price,
     sale_price: e.pivot.sale_price,
     quantity: e.pivot.quantity,
+    unit: e.pivot.unit || '台',
     item_note: e.pivot.item_note || '',
     is_adjustment: !!e.pivot.is_adjustment
 }));
@@ -145,11 +146,11 @@ const checkAndAddMaterialRow = (index) => {
 
 // --- 操作 ---
 const addEquipment = () => {
-    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, item_note: '', is_adjustment: false });
+    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: false });
 };
 
 const addAdjustmentEquipment = () => {
-    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, item_note: '', is_adjustment: true });
+    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: true });
 };
 
 const removeEquipment = (index) => {
@@ -287,7 +288,7 @@ if (form.materials.length === 0) addMaterial();
                                 <div class="relative"><InputLabel value="型號" /><TextInput v-model="equip.model_name" @input="searchEquipments(i, equip.model_name)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
                                 <div class="relative"><InputLabel value="規格" /><TextInput v-model="equip.specs" @input="searchEquipments(i, equip.specs)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
                                 <div class="grid grid-cols-2 gap-2"><div><InputLabel value="進價" /><TextInput type="number" v-model="equip.cost_price" @keydown.enter.prevent class="w-full bg-gray-100" /></div><div><InputLabel value="售價" /><TextInput type="number" v-model="equip.sale_price" @keydown.enter.prevent class="w-full border-blue-200" /></div></div>
-                                <div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div>
+                                <div class="grid grid-cols-2 gap-2"><div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div><div><InputLabel value="單位" /><TextInput v-model="equip.unit" @keydown.enter.prevent class="w-full" placeholder="台" /></div></div>
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" @keydown.enter.prevent class="w-full"/></div>
                             </div>
                         </div>
@@ -329,7 +330,7 @@ if (form.materials.length === 0) addMaterial();
                                 <tr v-for="(eq, i) in visibleEquipments" :key="'e'+i" class="border border-black">
                                     <td v-if="i===0" :rowspan="visibleEquipments.length + 1" class="border border-black py-1"></td>
                                     <template v-if="eq.is_adjustment"><td colspan="2" class="border border-black py-1">{{ eq.model_name }}</td><td colspan="3" class="border border-black py-1 font-bold">{{ eq.sale_price }}</td></template>
-                                    <template v-else><td class="border border-black py-1">{{ eq.model_name }}</td><td class="border border-black py-1">{{ eq.specs }}</td><td class="border border-black py-1">{{ eq.quantity }} 台</td><td class="border border-black py-1">{{ eq.sale_price }}</td><td class="border border-black py-1">{{ eq.sale_price * eq.quantity }}</td></template>
+                                    <template v-else><td class="border border-black py-1">{{ eq.model_name }}</td><td class="border border-black py-1">{{ eq.specs }}</td><td class="border border-black py-1">{{ eq.quantity }} {{ eq.unit || '台' }}</td><td class="border border-black py-1">{{ eq.sale_price }}</td><td class="border border-black py-1">{{ eq.sale_price * eq.quantity }}</td></template>
                                     <td class="border border-black py-1">{{ eq.item_note }}</td>
                                 </tr>
                                 <tr class="border border-black font-bold bg-gray-50/50">

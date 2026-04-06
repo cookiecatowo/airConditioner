@@ -20,6 +20,7 @@ class OrderController extends Controller
     {
         $query = Order::with('customer')->latest();
 
+        // 關鍵字搜尋
         if ($request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -32,11 +33,28 @@ class OrderController extends Controller
             });
         }
 
+        // 處理狀況篩選 (ps=1,2)
+        if ($request->filled('ps')) {
+            $ps = array_filter(explode(',', $request->ps), 'is_numeric');
+            if (!empty($ps)) $query->whereIn('processing_status', $ps);
+        } else {
+            // 預設隱藏垃圾桶
+            $query->whereIn('processing_status', [1, 2]);
+        }
+
+        // 收款狀況篩選 (pmt=1,2,3)
+        if ($request->filled('pmt')) {
+            $pmt = array_filter(explode(',', $request->pmt), 'is_numeric');
+            if (!empty($pmt)) $query->whereIn('payment_status', $pmt);
+        }
+
         return Inertia::render('Orders/Index', [
-            'orders' => $query->paginate(15)->withQueryString(),
+            'orders'  => $query->paginate(15)->withQueryString(),
             'filters' => [
-                'search' => $request->search
-            ]
+                'search' => $request->search,
+                'ps'     => $request->ps,
+                'pmt'    => $request->pmt,
+            ],
         ]);
     }
 
@@ -97,6 +115,7 @@ class OrderController extends Controller
                     'cost_price' => $item->cost_price,
                     'sale_price' => $item->sale_price,
                     'quantity' => $item->quantity,
+                    'unit' => $item->unit ?? '台',
                     'is_adjustment' => $item->is_adjustment,
                     'item_note' => $item->item_note,
                     'custom_model_name' => $item->custom_model_name,
@@ -227,6 +246,7 @@ class OrderController extends Controller
                         'custom_model_name' => $item['model_name'],
                         'sale_price' => $item['sale_price'] ?? 0,
                         'quantity' => 1,
+                        'unit' => $item['unit'] ?? '台',
                         'is_adjustment' => true,
                         'item_note' => $item['item_note'] ?? '',
                         'created_at' => now(),
@@ -253,6 +273,7 @@ class OrderController extends Controller
                         'cost_price' => $item['cost_price'] ?? 0,
                         'sale_price' => $item['sale_price'] ?? 0,
                         'quantity' => $item['quantity'] ?? 1,
+                        'unit' => $item['unit'] ?? '台',
                         'is_adjustment' => false,
                         'item_note' => $item['item_note'] ?? '',
                         'created_at' => now(),
@@ -303,6 +324,29 @@ class OrderController extends Controller
         }
 
         $order->update(['total_amount' => $totalAmount]);
+    }
+
+    public function updateStatus(Request $request, Order $order)
+    {
+        $request->validate([
+            'processing_status' => 'sometimes|integer|in:1,2,3',
+            'payment_status'    => 'sometimes|integer|in:1,2,3',
+        ]);
+
+        // 未結清不能設為已完成
+        $newProcessing = $request->input('processing_status', $order->processing_status);
+        $newPayment    = $request->input('payment_status',    $order->payment_status);
+
+        if ($newProcessing == 2 && $newPayment != 3) {
+            return back()->withErrors(['status' => '需先將收款狀態設為「已結清」才能標記已完成']);
+        }
+
+        $order->update([
+            'processing_status' => $newProcessing,
+            'payment_status'    => $newPayment,
+        ]);
+
+        return back();
     }
 
     public function export(Order $order)
@@ -407,7 +451,7 @@ class OrderController extends Controller
                 } else {
                     $table->addCell(3000, $cellStyleCentered)->addText($eq->model_name, ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(2000, $cellStyleCentered)->addText($eq->specs, ['size' => $tableFontSize], $pStyleCentered);
-                    $table->addCell(1000, $cellStyleCentered)->addText($eq->pivot->quantity . ' 台', ['size' => $tableFontSize], $pStyleCentered);
+                    $table->addCell(1000, $cellStyleCentered)->addText($eq->pivot->quantity . ' ' . ($eq->pivot->unit ?? '台'), ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(1200, $cellStyleCentered)->addText(number_format($eq->pivot->sale_price), ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(1200, $cellStyleCentered)->addText(number_format($eq->pivot->sale_price * $eq->pivot->quantity), ['size' => $tableFontSize], $pStyleCentered);
                 }
