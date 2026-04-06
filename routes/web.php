@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('orders', OrderController::class);
     Route::get('/orders/{order}/export', [OrderController::class, 'export'])->name('orders.export');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::patch('/orders/{order}/quick-edit', [OrderController::class, 'quickEdit'])->name('orders.quickEdit');
 
     // ★ 今天要做的：手機報價單快速產生器 ★
     Route::get('/quotations/create', [QuotationController::class, 'create'])->name('quotations.create');

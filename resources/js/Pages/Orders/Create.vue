@@ -19,7 +19,8 @@ const form = useForm({
     address: '',
     public_notes: '',
     date: new Date().toISOString().substr(0, 10),
-    type: 'install', // 'install' or 'repair'
+    type: 'install',
+    work_category: 'ac',
     report_title: '估價單',
     equipments: [],
     materials: [],
@@ -214,7 +215,7 @@ const defaultMaterials = [
 form.materials = defaultMaterials;
 if (form.type === 'install') addEquipment();
 watch(() => form.type, (t) => {
-    if (t === 'repair') form.equipments = [];
+    if (t !== 'install') form.equipments = [];
     if (t === 'install' && form.equipments.length === 0) addEquipment();
 });
 </script>
@@ -254,6 +255,15 @@ watch(() => form.type, (t) => {
                             <div class="mt-2 flex gap-4">
                                 <label class="flex items-center"><input type="radio" v-model="form.type" value="install" class="mr-2"> 安裝</label>
                                 <label class="flex items-center"><input type="radio" v-model="form.type" value="repair" class="mr-2"> 維修</label>
+                                <label class="flex items-center"><input type="radio" v-model="form.type" value="maintenance" class="mr-2"> 保養</label>
+                            </div>
+                        </div>
+                        <div>
+                            <InputLabel value="業務分類" />
+                            <div class="mt-2 flex gap-4">
+                                <label class="flex items-center"><input type="radio" v-model="form.work_category" value="ac" class="mr-2"> 空調</label>
+                                <label class="flex items-center"><input type="radio" v-model="form.work_category" value="surveillance" class="mr-2"> 監視</label>
+                                <label class="flex items-center"><input type="radio" v-model="form.work_category" value="other" class="mr-2"> 其他</label>
                             </div>
                         </div>
                     </div>
@@ -294,6 +304,7 @@ watch(() => form.type, (t) => {
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h3 class="text-lg font-bold">材料與工資細項</h3>
                         <div class="flex gap-2">
+                            <button type="button" @click="form.materials = [{ id: null, name: '', specs: '', unit: '組', unit_price: 0, quantity: 1, item_note: '', is_adjustment: false }]" class="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition">清空</button>
                             <SecondaryButton @click="addAdjustmentMaterial" class="!bg-amber-50">+ 調整項</SecondaryButton>
                             <SecondaryButton @click="addMaterial">+ 新項目</SecondaryButton>
                         </div>

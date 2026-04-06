@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -11,6 +11,16 @@ const props = defineProps({
 const formatCurrency = (value) => {
     if (value === 0 || value === '0') return '未設定';
     return new Intl.NumberFormat('zh-TW', { minimumFractionDigits: 0 }).format(value);
+};
+
+// 快速編輯表單
+const quickForm = useForm({
+    report_title: props.order.report_title || '估價單',
+    notes: props.order.notes || '',
+});
+
+const saveQuick = () => {
+    quickForm.patch(route('orders.quickEdit', props.order.id));
 };
 
 // 設備小計
@@ -54,20 +64,61 @@ const materialsTotal = computed(() => {
                         <div><p class="text-xs text-gray-400">聯絡電話</p><p class="font-bold">{{ order.customer.phone }}</p></div>
                         <div><p class="text-xs text-gray-400">統編</p><p class="font-bold">{{ order.tax_id }}</p></div>
                         <div><p class="text-xs text-gray-400">建單日期</p><p class="font-bold">{{ order.date }}</p></div>
-                        <div><p class="text-xs text-gray-400 ">地址</p><p class="font-bold">{{ order.address }}</p></div>
+                        <div><p class="text-xs text-gray-400">地址</p><p class="font-bold">{{ order.address }}</p></div>
                         <div><p class="text-xs text-gray-400">備註</p><p class="font-bold">{{ order.public_notes }}</p></div>
+                        <div>
+                            <p class="text-xs text-gray-400">訂單類型</p>
+                            <div class="flex gap-2 mt-1 flex-wrap">
+                                <span class="px-2 py-0.5 rounded-full text-xs font-bold border"
+                                    :class="{ 'bg-blue-100 text-blue-800 border-blue-200': order.type==='install', 'bg-green-100 text-green-800 border-green-200': order.type==='repair', 'bg-purple-100 text-purple-800 border-purple-200': order.type==='maintenance' }">
+                                    {{ { install:'安裝', repair:'維修', maintenance:'保養' }[order.type] }}
+                                </span>
+                                <span v-if="order.work_category" class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="{ 'bg-sky-100 text-sky-700': order.work_category==='ac', 'bg-indigo-100 text-indigo-700': order.work_category==='surveillance', 'bg-gray-100 text-gray-600': order.work_category==='other' }">
+                                    {{ { ac:'空調', surveillance:'監視', other:'其他' }[order.work_category] }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                 <!-- 內部備註 (可編輯，僅顯示在網站，不會印出) -->
+                <div class="bg-amber-50 p-6 rounded-lg border border-amber-200 print:hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-amber-800">內部管理備註 <span class="text-xs font-normal text-amber-600">（僅顯示於網站，不列印）</span></h4>
+                        <div class="flex items-center gap-3">
+                            <span v-if="quickForm.recentlySuccessful" class="text-xs text-green-600">已儲存 ✓</span>
+                            <button
+                                @click="saveQuick"
+                                :disabled="quickForm.processing"
+                                class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded transition disabled:opacity-50"
+                            >儲存備註</button>
+                        </div>
+                    </div>
+                    <textarea
+                        v-model="quickForm.notes"
+                        rows="4"
+                        placeholder="輸入內部備註（顧客不會看到）..."
+                        class="w-full border border-amber-300 rounded-md bg-white p-3 text-amber-900 focus:ring-amber-400 focus:border-amber-400 resize-none"
+                    ></textarea>
+                    <p v-if="quickForm.errors.notes" class="text-red-500 text-xs mt-1">{{ quickForm.errors.notes }}</p>
                 </div>
 
                 <!-- 模擬 A4 報價單區域 -->
                 <div class="flex justify-center">
                     <div class="bg-white shadow-2xl p-[1.5cm] w-[210mm] min-h-[297mm] text-black border border-gray-300 relative print:shadow-none print:p-0 print:border-none paper">
                         
-                        <!-- 報單標題 -->
-                        <div class="text-center mb-6 border-b-4 border-double border-black pb-2">
-                            <h1 class="text-4xl font-bold tracking-[1.2em]">
-                                {{ order.report_title }}
-                            </h1>
+                        <!-- 報單標題 (可直接編輯) -->
+                        <div class="text-center mb-6 border-b-4 border-double border-black pb-2 print:hidden">
+                            <input
+                                v-model="quickForm.report_title"
+                                class="text-4xl font-bold tracking-[1.2em] text-center w-full border-0 border-b-2 border-dashed border-blue-300 focus:border-blue-500 focus:ring-0 bg-transparent outline-none"
+                                @blur="saveQuick"
+                            />
+                        </div>
+                        <!-- 列印時顯示純文字 -->
+                        <div class="text-center mb-6 border-b-4 border-double border-black pb-2 hidden print:block">
+                            <h1 class="text-4xl font-bold tracking-[1.2em]">{{ quickForm.report_title }}</h1>
                         </div>
 
                         <!-- 抬頭資訊 (3:2 兩欄佈局) -->
@@ -183,12 +234,6 @@ const materialsTotal = computed(() => {
                         </div>
 
                     </div>
-                </div>
-
-                <!-- 內部記錄 -->
-                <div v-if="order.notes" class="max-w-5xl mx-auto bg-amber-50 p-6 rounded-lg border border-amber-200 print:hidden">
-                    <h4 class="font-bold text-amber-800 mb-2">內部管理備註：</h4>
-                    <p class="text-amber-900 whitespace-pre-wrap">{{ order.notes }}</p>
                 </div>
 
             </div>

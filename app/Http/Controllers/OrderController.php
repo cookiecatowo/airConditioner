@@ -33,19 +33,32 @@ class OrderController extends Controller
             });
         }
 
-        // 處理狀況篩選 (ps=1,2)
+        // 處理狀況篩選
         if ($request->filled('ps')) {
             $ps = array_filter(explode(',', $request->ps), 'is_numeric');
             if (!empty($ps)) $query->whereIn('processing_status', $ps);
-        } else {
-            // 預設隱藏垃圾桶
-            $query->whereIn('processing_status', [1, 2]);
         }
 
-        // 收款狀況篩選 (pmt=1,2,3)
+        // 收款狀況篩選
         if ($request->filled('pmt')) {
             $pmt = array_filter(explode(',', $request->pmt), 'is_numeric');
             if (!empty($pmt)) $query->whereIn('payment_status', $pmt);
+        }
+
+        // 訂單類型篩選
+        if ($request->filled('tp')) {
+            $tp = array_filter(explode(',', $request->tp));
+            if (!empty($tp)) $query->whereIn('type', $tp);
+        }
+
+        // 業務分類篩選 (包含 null，用 none 代表)
+        if ($request->filled('wc')) {
+            $wc = explode(',', $request->wc);
+            $query->where(function ($q) use ($wc) {
+                if (in_array('none', $wc)) $q->orWhereNull('work_category');
+                $actual = array_filter($wc, fn($v) => $v !== 'none');
+                if (!empty($actual)) $q->orWhereIn('work_category', $actual);
+            });
         }
 
         return Inertia::render('Orders/Index', [
@@ -54,6 +67,8 @@ class OrderController extends Controller
                 'search' => $request->search,
                 'ps'     => $request->ps,
                 'pmt'    => $request->pmt,
+                'tp'     => $request->tp,
+                'wc'     => $request->wc,
             ],
         ]);
     }
@@ -163,7 +178,8 @@ class OrderController extends Controller
             'customer_name' => 'required|string',
             'address' => 'required|string',
             'date' => 'required|date',
-            'type' => 'required|in:install,repair',
+            'type' => 'required|in:install,repair,maintenance',
+            'work_category' => 'nullable|in:ac,surveillance,other',
             'equipments' => 'array',
             'materials' => 'array',
         ]);
@@ -181,6 +197,7 @@ class OrderController extends Controller
                 'public_notes' => $request->public_notes,
                 'date' => $request->date,
                 'type' => $request->type,
+                'work_category' => $request->work_category,
                 'report_title' => $request->report_title ?? '估價單',
                 'notes' => $request->notes,
                 'total_amount' => 0,
@@ -198,7 +215,8 @@ class OrderController extends Controller
             'customer_name' => 'required|string',
             'address' => 'required|string',
             'date' => 'required|date',
-            'type' => 'required|in:install,repair',
+            'type' => 'required|in:install,repair,maintenance',
+            'work_category' => 'nullable|in:ac,surveillance,other',
             'equipments' => 'array',
             'materials' => 'array',
         ]);
@@ -216,6 +234,7 @@ class OrderController extends Controller
                 'public_notes' => $request->public_notes,
                 'date' => $request->date,
                 'type' => $request->type,
+                'work_category' => $request->work_category,
                 'report_title' => $request->report_title ?? '估價單',
                 'notes' => $request->notes,
             ]);
@@ -324,6 +343,18 @@ class OrderController extends Controller
         }
 
         $order->update(['total_amount' => $totalAmount]);
+    }
+
+    public function quickEdit(Request $request, Order $order)
+    {
+        $request->validate([
+            'notes'        => 'nullable|string',
+            'report_title' => 'nullable|string|max:50',
+        ]);
+
+        $order->update($request->only(['notes', 'report_title']));
+
+        return back()->with('success', '已儲存');
     }
 
     public function updateStatus(Request $request, Order $order)
