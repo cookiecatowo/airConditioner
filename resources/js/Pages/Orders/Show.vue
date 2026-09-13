@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     order: Object,
@@ -32,6 +32,42 @@ const equipmentsTotal = computed(() => {
 const materialsTotal = computed(() => {
     return props.order.materials.reduce((sum, m) => sum + (parseFloat(m.pivot.unit_price || 0) * parseInt(m.pivot.quantity || 1)), 0);
 });
+
+// 工作場所照片
+const photoInput = ref(null);
+const uploading = ref(false);
+const uploadError = ref('');
+
+const uploadPhotos = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    uploading.value = true;
+    uploadError.value = '';
+
+    router.post(route('orders.photos.store', props.order.id), { photos: files }, {
+        forceFormData: true,
+        preserveScroll: true,
+        onError: (errors) => {
+            uploadError.value = Object.values(errors)[0] || '上傳失敗，請再試一次。';
+        },
+        onFinish: () => {
+            uploading.value = false;
+            if (photoInput.value) photoInput.value.value = '';
+        },
+    });
+};
+
+const saveCaption = (photo, event) => {
+    const value = event.target.value;
+    if (value === (photo.caption || '')) return;
+    router.patch(route('orders.photos.update', photo.id), { caption: value }, { preserveScroll: true });
+};
+
+const deletePhoto = (photo) => {
+    if (!confirm('確定要刪除這張照片嗎？刪除後無法復原。')) return;
+    router.delete(route('orders.photos.destroy', photo.id), { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -80,6 +116,7 @@ const materialsTotal = computed(() => {
                             </div>
                         </div>
                     </div>
+
                 </div>
 
                  <!-- 內部備註 (可編輯，僅顯示在網站，不會印出) -->
@@ -102,6 +139,61 @@ const materialsTotal = computed(() => {
                         class="w-full border border-amber-300 rounded-md bg-white p-3 text-amber-900 focus:ring-amber-400 focus:border-amber-400 resize-none"
                     ></textarea>
                     <p v-if="quickForm.errors.notes" class="text-red-500 text-xs mt-1">{{ quickForm.errors.notes }}</p>
+                </div>
+
+                <!-- 工作場所照片 (僅顯示於網站，不會出現在報價單) -->
+                <div class="bg-white p-6 shadow sm:rounded-lg border-l-4 border-teal-500 print:hidden">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+                        <h4 class="font-bold text-teal-800">
+                            工作場所照片
+                            <span class="text-xs font-normal text-teal-600">（僅顯示於網站，不會印在報價單上）</span>
+                        </h4>
+                        <label
+                            class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-xs font-semibold rounded-md cursor-pointer hover:bg-teal-700 transition"
+                            :class="{ 'opacity-50 cursor-not-allowed': uploading }"
+                        >
+                            {{ uploading ? '上傳中…' : '＋ 新增照片' }}
+                            <input
+                                ref="photoInput"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                class="hidden"
+                                :disabled="uploading"
+                                @change="uploadPhotos"
+                            />
+                        </label>
+                    </div>
+
+                    <p v-if="uploadError" class="text-red-500 text-sm mb-3">{{ uploadError }}</p>
+
+                    <p v-if="!order.photos || order.photos.length === 0" class="text-gray-400 text-sm py-6 text-center">
+                        還沒有照片。按右上角「＋ 新增照片」上傳，一次可以選多張。
+                    </p>
+
+                    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div v-for="photo in order.photos" :key="photo.id" class="border border-gray-200 rounded-lg overflow-hidden">
+                            <a :href="photo.url" target="_blank" class="block bg-gray-100">
+                                <img :src="photo.url" alt="" class="w-full h-32 object-cover hover:opacity-90 transition" />
+                            </a>
+                            <div class="p-2 space-y-2">
+                                <input
+                                    type="text"
+                                    :value="photo.caption"
+                                    placeholder="加一行說明…"
+                                    maxlength="255"
+                                    class="w-full text-xs border-gray-200 rounded px-2 py-1 focus:ring-teal-400 focus:border-teal-400"
+                                    @blur="saveCaption(photo, $event)"
+                                    @keyup.enter="$event.target.blur()"
+                                />
+                                <button
+                                    type="button"
+                                    class="w-full text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded py-1 transition"
+                                    @click="deletePhoto(photo)"
+                                >刪除</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 模擬 A4 報價單區域 -->

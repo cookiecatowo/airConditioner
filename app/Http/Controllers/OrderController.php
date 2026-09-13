@@ -104,7 +104,7 @@ class OrderController extends Controller
     private function loadOrderFullDetails(Order $order)
     {
         // 載入基本關聯
-        $order->load(['customer']);
+        $order->load(['customer', 'photos']);
 
         // 手動載入設備細項 (包含調整項)
         $equipments = DB::table('order_equipment')

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderPhotoController;
 use App\Http\Controllers\BrandEquipmentController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\ProfileController;
@@ -37,6 +38,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders/{order}/export', [OrderController::class, 'export'])->name('orders.export');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::patch('/orders/{order}/quick-edit', [OrderController::class, 'quickEdit'])->name('orders.quickEdit');
+
+    // 工作場所照片 (僅內部檢視，不會出現在報價單)
+    Route::post('/orders/{order}/photos', [OrderPhotoController::class, 'store'])->name('orders.photos.store');
+    Route::patch('/photos/{photo}', [OrderPhotoController::class, 'update'])->name('orders.photos.update');
+    Route::delete('/photos/{photo}', [OrderPhotoController::class, 'destroy'])->name('orders.photos.destroy');
 
     // ★ 今天要做的：手機報價單快速產生器 ★
     Route::get('/quotations/create', [QuotationController::class, 'create'])->name('quotations.create');

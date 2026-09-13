@@ -28,4 +28,9 @@ class Order extends Model
                     ->withPivot('unit_price', 'quantity', 'is_adjustment', 'item_note')
                     ->withTimestamps();
     }
+
+    public function photos()
+    {
+        return $this->hasMany(OrderPhoto::class)->latest("id");
+    }
 }
