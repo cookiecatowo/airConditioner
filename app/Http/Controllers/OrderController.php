@@ -18,7 +18,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with('customer')->latest();
+        $query = Order::with('customer')->orderByDesc('date')->orderByDesc('id');
 
         // 關鍵字搜尋
         if ($request->search) {
