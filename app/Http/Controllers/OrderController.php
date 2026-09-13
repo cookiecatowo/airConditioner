@@ -556,7 +556,20 @@ class OrderController extends Controller
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 
-    public function searchCustomers(Request $request) { return Customer::where('name', 'like', "%{$request->q}%")->orWhere('phone', 'like', "%{$request->q}%")->limit(10)->get(); }
+    public function searchCustomers(Request $request)
+    {
+        return Customer::where('name', 'like', "%{$request->q}%")
+            ->orWhere('phone', 'like', "%{$request->q}%")
+            ->limit(10)
+            ->get()
+            ->map(fn ($c) => [
+                'id'        => $c->id,
+                'name'      => $c->name,
+                'phone'     => $c->phone,
+                'tax_id'    => $c->tax_id,
+                'addresses' => $c->knownAddresses(),
+            ]);
+    }
     public function searchBrands(Request $request) { return Brand::where('name', 'like', "%{$request->q}%")->limit(10)->get(); }
     public function searchEquipments(Request $request) {
         $query = Equipment::with('brand');

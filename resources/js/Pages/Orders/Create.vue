@@ -31,6 +31,7 @@ const commonTitles = ['請款單', '估價單', '報價單'];
 
 // --- 搜尋邏輯 ---
 const customerSuggestions = ref([]);
+const knownAddresses = ref([]);
 const brandSuggestions = ref([]);
 const equipmentSuggestions = ref([]);
 const materialSuggestions = ref([]);
@@ -62,7 +63,8 @@ const selectCustomer = (c) => {
     form.customer_name = c.name;
     form.customer_phone = c.phone;
     form.customer_tax_id = c.tax_id || '';
-    form.address = c.address;
+    knownAddresses.value = c.addresses || [];
+    if (knownAddresses.value.length === 1) form.address = knownAddresses.value[0];
     customerSuggestions.value = [];
 };
 
@@ -247,7 +249,23 @@ watch(() => form.type, (t) => {
                         </div>
                         <div><InputLabel value="聯絡電話" /><TextInput v-model="form.customer_phone" @keydown.enter.prevent class="w-full mt-1" /></div>
                         <div><InputLabel value="統一編號" /><TextInput v-model="form.customer_tax_id" @keydown.enter.prevent class="w-full mt-1" /></div>
-                        <div class="md:col-span-2"><InputLabel value="施工地址" required /><TextInput v-model="form.address" @keydown.enter.prevent class="w-full mt-1" /></div>
+                        <div class="md:col-span-2">
+                            <InputLabel value="施工地址" required />
+                            <TextInput v-model="form.address" @keydown.enter.prevent class="w-full mt-1" />
+                            <div v-if="knownAddresses.length" class="mt-2 flex flex-wrap items-center gap-2">
+                                <span class="text-xs text-gray-400">這位顧客用過：</span>
+                                <button
+                                    v-for="(a, i) in knownAddresses"
+                                    :key="i"
+                                    type="button"
+                                    @click="form.address = a"
+                                    class="px-2 py-1 text-xs rounded border transition"
+                                    :class="form.address === a
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-blue-50 hover:border-blue-300'"
+                                >{{ a }}</button>
+                            </div>
+                        </div>
                         <div class="md:col-span-2"><InputLabel value="報單備註 (顯示)" /><TextInput v-model="form.public_notes" @keydown.enter.prevent class="w-full mt-1" /></div>
                         <div><InputLabel value="建單日期" required /><TextInput type="date" v-model="form.date" @keydown.enter.prevent class="w-full mt-1" /></div>
                         <div>
