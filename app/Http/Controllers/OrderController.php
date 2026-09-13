@@ -403,7 +403,7 @@ class OrderController extends Controller
         ]);
 
         // 1. 報單標題 + 全寬雙底線 (增加字距 spacing)
-        $section->addText($order->report_title, ['size' => 26, 'bold' => true, 'spacing' => 480], ['alignment' => 'center', 'spaceAfter' => 0]);
+        $section->addText($order->report_title ?? '估價單', ['size' => 26, 'bold' => true, 'spacing' => 480], ['alignment' => 'center', 'spaceAfter' => 0]);
         $styleTitleTable = ['borderBottomSize' => 18, 'borderBottomColor' => '000000', 'borderBottomStyle' => 'double'];
         $titleLineTable = $section->addTable(['width' => 100 * 50, 'unit' => 'pct']);
         $titleLineTable->addRow();
@@ -492,7 +492,7 @@ class OrderController extends Controller
             $table->addRow();
             $table->addCell(800, ['vMerge' => 'continue']);
             $table->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText('小計', ['size' => $tableFontSize], $pStyleCentered);
-            $table->addCell(3400, ['gridSpan' => 4, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText(number_format($subtotal), ['size' => $tableFontSize], $pStyleCentered);
+            $table->addCell(5200, ['gridSpan' => 4, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText(number_format($subtotal), ['size' => $tableFontSize], $pStyleCentered);
         }
 
         // 材料與工資部分
@@ -522,7 +522,7 @@ class OrderController extends Controller
             $table->addRow();
             $table->addCell(800, ['vMerge' => 'continue']);
             $table->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText('小計', ['size' => $tableFontSize], $pStyleCentered);
-            $table->addCell(3400, ['gridSpan' => 4, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText(number_format($subtotal), ['size' => $tableFontSize], $pStyleCentered);
+            $table->addCell(5200, ['gridSpan' => 4, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText(number_format($subtotal), ['size' => $tableFontSize], $pStyleCentered);
         }
 
         // 總計列
@@ -548,7 +548,9 @@ class OrderController extends Controller
 
         // 導出檔案
         $filename = "{$order->date}-{$order->customer->name}-報價單.docx";
-        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) mkdir($tempDir, 0755, true);
+        $tempFile = $tempDir . '/' . uniqid('phpword_') . '.docx';
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
         $objWriter->save($tempFile);
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
