@@ -33,6 +33,31 @@ const materialsTotal = computed(() => {
     return props.order.materials.reduce((sum, m) => sum + (parseFloat(m.pivot.unit_price || 0) * parseInt(m.pivot.quantity || 1)), 0);
 });
 
+// 狀態調整
+const processingOptions = [
+    { value: 1, label: '處理中', badgeCls: 'bg-blue-100 text-blue-700' },
+    { value: 2, label: '已完成', badgeCls: 'bg-green-100 text-green-700' },
+    { value: 3, label: '垃圾桶', badgeCls: 'bg-gray-200 text-gray-600' },
+];
+const paymentOptions = [
+    { value: 1, label: '未收款',   badgeCls: 'bg-red-100 text-red-700' },
+    { value: 2, label: '已收訂金', badgeCls: 'bg-amber-100 text-amber-700' },
+    { value: 3, label: '已結清',   badgeCls: 'bg-emerald-100 text-emerald-700' },
+];
+const badgeOf = (opts, v) => opts.find(o => o.value == v)?.badgeCls || '';
+const statusSaved = ref(false);
+
+const updateStatus = (field, value) => {
+    router.patch(route('orders.updateStatus', props.order.id), { [field]: value }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            statusSaved.value = true;
+            setTimeout(() => { statusSaved.value = false; }, 2000);
+        },
+        onError: (errors) => { if (errors.status) alert(errors.status); },
+    });
+};
+
 // 工作場所照片
 const photoInput = ref(null);
 const uploading = ref(false);
@@ -117,6 +142,32 @@ const deletePhoto = (photo) => {
                         </div>
                     </div>
 
+                    <div class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap items-end gap-6">
+                        <div>
+                            <p class="text-xs text-gray-400 mb-1">處理狀況</p>
+                            <select
+                                :value="order.processing_status"
+                                @change="updateStatus('processing_status', $event.target.value)"
+                                :class="badgeOf(processingOptions, order.processing_status)"
+                                class="text-sm font-semibold rounded-full px-3 py-1.5 border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 focus:ring-blue-400"
+                            >
+                                <option v-for="o in processingOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 mb-1">收款狀況</p>
+                            <select
+                                :value="order.payment_status"
+                                @change="updateStatus('payment_status', $event.target.value)"
+                                :class="badgeOf(paymentOptions, order.payment_status)"
+                                class="text-sm font-semibold rounded-full px-3 py-1.5 border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 focus:ring-blue-400"
+                            >
+                                <option v-for="o in paymentOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+                            </select>
+                        </div>
+                        <span v-if="statusSaved" class="text-xs text-green-600 pb-2">已儲存 ✓</span>
+                        <p class="text-xs text-gray-400 pb-2">收款未結清時無法設為已完成</p>
+                    </div>
                 </div>
 
                  <!-- 內部備註 (可編輯，僅顯示在網站，不會印出) -->
