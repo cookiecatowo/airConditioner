@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# 舊報價單 Word 原始檔（含客戶個資，不進版控）
+/舊報價單
