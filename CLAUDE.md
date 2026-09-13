@@ -1,9 +1,40 @@
-```
-- Think before acting. Read existing files before writing code.
-- Be concise in output but thorough in reasoning.
-- Prefer editing over rewriting whole files.
-- Do not re-read files you have already read.
-- Test your code before declaring done.
-- No sycophantic openers or closing fluff.
-- Keep solutions simple and direct.
-- User instructions always override this file.
+# 專案協作規則
+
+## 工作方式
+- 動手前先想清楚，寫程式前先讀過既有檔案。
+- 優先修改既有檔案，不要整個重寫。
+- 已經讀過的檔案不要重複讀。
+- 解法保持簡單直接，不要過度設計。
+- 宣稱完成前一定要實際測過。
+
+## 對話對象
+本專案由不具程式背景的使用者管理。溝通時：
+- 用業務語言，避免技術術語。非提不可時，用一句話說明它的作用。
+- 回報「改了什麼、你現在能做什麼」，不要貼 diff 或程式碼片段（對方要求才貼）。
+- 需要對方動手時，給明確的操作步驟。
+- 出問題直說，不要含糊帶過或報喜不報憂。
+- 不要客套開場白與結尾贅語。簡潔，但該解釋的要解釋清楚。
+
+## 決策分工
+- **技術性決定自行處理，不要問**：套件選擇、資料表結構、程式架構、
+  Docker 設定、錯誤處理、commit 切法、要不要寫測試。
+- **功能性決定一定要問**：畫面顯示什麼、欄位叫什麼、操作流程、
+  報價單格式、什麼情況要擋下來不給存檔、要不要寄通知。
+
+  問的時候給 2–3 個具體選項，說明各自的實際影響（會看到什麼、少了什麼），
+  並附上建議，讓對方可以只回「好」或「不要」，而不是自己從零想。
+
+## 執行環境
+本機沒有安裝 PHP，只能用 Docker 執行。
+不要嘗試 `composer run dev`、`php artisan serve`、`npm run dev`，一定會失敗。
+
+常用操作已包成工作流，使用者只要說：
+- 「打開這個專案」→ 啟動系統，網址 http://localhost
+- 「關閉專案」→ 停止系統
+- 「上傳」→ 存檔並上傳到 GitHub
+
+詳細步驟見 `.claude/skills/`，開發細節見 `RECODE.md`。
+
+---
+
+使用者的當下指示一律優先於本檔案。

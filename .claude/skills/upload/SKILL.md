@@ -29,6 +29,7 @@ description: 把目前的改動 commit 並 push 到 GitHub（origin/main）。Us
 
    ```bash
    git add -A
+   git diff --cached --name-only   # 確認清單符合預期再 commit
    git commit -m "訊息"
    ```
 
@@ -52,3 +53,14 @@ description: 把目前的改動 commit 並 push 到 GitHub（origin/main）。Us
   推之前先用 `git log --oneline origin/main..HEAD` 看清楚會推出去哪些，並在回報時說明。
 - push 被拒（遠端有新 commit）時，先 `git fetch` 看差異再決定，**不要**用 `--force`。
 - 不要用 `--no-verify` 跳過 hook。
+- **commit 前務必確認 staged 清單**：先前的 `git add` 可能在失敗的 commit 後仍殘留，
+  導致下一個 commit 吃進非預期的檔案。用 `git diff --cached --name-only` 核對。
+- 還沒 push 的 commit 切錯了，用 `git reset --soft HEAD~1` 退回重做（保留工作區內容）。
+
+## 給接手者的說明
+
+這個專案之後由不會寫程式的使用者管理。對方說「上傳」時：
+- commit message 自己決定，不用問。
+- 但如果工作區裡有你不確定是誰改的、或看起來不該提交的檔案，
+  用白話問他（例如「有個檔案叫 XXX，是你改的嗎？要一起存嗎？」），不要自行判斷後默默帶過。
+- 推送完回報「已上傳，存了 N 筆修改」即可，不用貼 hash 和 diff。
