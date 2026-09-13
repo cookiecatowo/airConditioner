@@ -3,6 +3,7 @@
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderPhotoController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BrandEquipmentController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\ProfileController;
@@ -43,6 +44,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{order}/photos', [OrderPhotoController::class, 'store'])->name('orders.photos.store');
     Route::patch('/photos/{photo}', [OrderPhotoController::class, 'update'])->name('orders.photos.update');
     Route::delete('/photos/{photo}', [OrderPhotoController::class, 'destroy'])->name('orders.photos.destroy');
+
+    // 顧客管理
+    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+    Route::patch('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+    Route::post('/customers/{customer}/merge', [CustomerController::class, 'merge'])->name('customers.merge');
+    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 
     // ★ 今天要做的：手機報價單快速產生器 ★
     Route::get('/quotations/create', [QuotationController::class, 'create'])->name('quotations.create');

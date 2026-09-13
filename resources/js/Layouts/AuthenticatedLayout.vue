@@ -46,6 +46,12 @@ const showingNavigationDropdown = ref(false);
                                     報價單列表
                                 </NavLink>
                                 <NavLink
+                                    :href="route('customers.index')"
+                                    :active="route().current('customers.*')"
+                                >
+                                    顧客管理
+                                </NavLink>
+                                <NavLink
                                     :href="route('brands.index')"
                                     :active="route().current('brands.*') || route().current('materials.*')"
                                 >

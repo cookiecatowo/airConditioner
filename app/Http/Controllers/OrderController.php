@@ -187,7 +187,7 @@ class OrderController extends Controller
         return DB::transaction(function () use ($request) {
             $customer = Customer::updateOrCreate(
                 ['name' => $request->customer_name],
-                ['phone' => $request->customer_phone, 'tax_id' => $request->customer_tax_id, 'address' => $request->address]
+                ['phone' => $request->customer_phone, 'tax_id' => $request->customer_tax_id]
             );
 
             $order = Order::create([
@@ -224,7 +224,7 @@ class OrderController extends Controller
         return DB::transaction(function () use ($request, $order) {
             $customer = Customer::updateOrCreate(
                 ['name' => $request->customer_name],
-                ['phone' => $request->customer_phone, 'tax_id' => $request->customer_tax_id, 'address' => $request->address]
+                ['phone' => $request->customer_phone, 'tax_id' => $request->customer_tax_id]
             );
 
             $order->update([
