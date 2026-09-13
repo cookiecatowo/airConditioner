@@ -1,5 +1,7 @@
 # --- 階段 1: 獲取 PHP 依賴 (為了 Ziggy) ---
 FROM serversideup/php:8.3-fpm-nginx AS php-vendor
+USER root
+RUN install-php-extensions gd
 WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-interaction --no-scripts --prefer-dist --no-progress
@@ -15,6 +17,9 @@ RUN npm run build
 
 # --- 階段 3: 最終生產環境 ---
 FROM serversideup/php:8.3-fpm-nginx
+USER root
+RUN install-php-extensions gd
+USER www-data
 
 WORKDIR /var/www/html
 
