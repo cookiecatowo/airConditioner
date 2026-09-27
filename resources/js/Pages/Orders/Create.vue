@@ -10,6 +10,7 @@ import axios from 'axios';
 
 const props = defineProps({
     brands: Array,
+    catalog: Array,
 });
 
 const form = useForm({
@@ -91,6 +92,67 @@ const searchEquipments = async (index, q) => {
     equipmentSuggestions.value = res.data.map(e => ({ ...e, targetIndex: index }));
 };
 
+
+// 設備選單：品牌 → 系列 → 規格（catalog 由後端一次送來）
+const seriesFor = (brandId) => {
+    if (!brandId) return [];
+    const seen = [];
+    props.catalog.forEach(e => {
+        if (e.brand_id != brandId) return;
+        if (!seen.includes(e.model_name)) seen.push(e.model_name);
+    });
+    return seen;
+};
+
+const specsFor = (brandId, series) => {
+    if (!brandId || !series) return [];
+    return props.catalog.filter(e => e.brand_id == brandId && e.model_name === series);
+};
+
+const onBrandChange = (index, brandId) => {
+    const b = props.brands.find(x => x.id == brandId);
+    const row = form.equipments[index];
+    row.brand_id = brandId;
+    row.brand_name = b ? b.name : '';
+    row.id = null;
+    row.model_name = '';
+    row.specs = '';
+    row.cost_price = 0;
+    row.sale_price = 0;
+};
+
+const onSeriesChange = (index, series) => {
+    const row = form.equipments[index];
+    row.model_name = series;
+    row.id = null;
+    row.specs = '';
+    row.cost_price = 0;
+    row.sale_price = 0;
+    // 該系列只有一個規格就直接帶入
+    const list = specsFor(row.brand_id, series);
+    if (list.length === 1) onSpecChange(index, list[0].id);
+};
+
+const onSpecChange = (index, equipmentId) => {
+    const row = form.equipments[index];
+    const e = props.catalog.find(x => x.id == equipmentId);
+    if (!e) { row.id = null; row.specs = ''; return; }
+    row.id = e.id;
+    row.specs = e.specs;
+    row.cost_price = e.default_cost_price;
+    row.sale_price = e.default_sale_price;
+};
+
+// 編輯既有訂單時，用品牌＋系列＋規格反查目前選到哪一筆
+const currentSpecId = (row) => {
+    const e = props.catalog.find(x => x.brand_id == row.brand_id && x.model_name === row.model_name && x.specs === row.specs);
+    return e ? e.id : '';
+};
+
+const toggleManual = (index) => {
+    form.equipments[index].manual = !form.equipments[index].manual;
+};
+
 const selectEquipment = (index, e) => {
     form.equipments[index].id = e.id;
     form.equipments[index].brand_id = e.brand_id;
@@ -124,11 +186,11 @@ const checkAndAddMaterialRow = (index) => {
 
 // --- 操作 ---
 const addEquipment = () => {
-    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: false, plan_group: '' });
+    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: false, plan_group: '', manual: false });
 };
 
 const addAdjustmentEquipment = () => {
-    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: true, plan_group: '' });
+    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: true, plan_group: '', manual: false });
 };
 
 const removeEquipment = (index) => {
@@ -148,6 +210,7 @@ const removeMaterial = (index) => {
 };
 
 // --- 計算可見項目與總額 ---
+
 const visibleEquipments = computed(() => form.equipments.filter(e => e.model_name || e.is_adjustment));
 const visibleMaterials = computed(() => form.materials.filter(m => m.name || m.is_adjustment));
 
@@ -174,7 +237,7 @@ const renameGroup = (grp, name) => {
 const addToGroup = (name) => {
     form.equipments.push({ id: null, brand_id: "", brand_name: "", model_name: "", specs: "",
         cost_price: 0, sale_price: 0, quantity: 1, unit: "台", item_note: "",
-        is_adjustment: false, plan_group: name });
+        is_adjustment: false, plan_group: name, manual: false });
 };
 
 const addPlanGroup = () => {
@@ -237,14 +300,10 @@ const submit = () => {
     if (form.type === 'install') {
         for (let i = 0; i < form.equipments.length; i++) {
             const e = form.equipments[i];
-            if (!e.is_adjustment && e.model_name) {
-                if (!e.brand_name || e.brand_name.trim() === '') {
-                    alert(`第 ${i + 1} 項設備未填寫品牌，請確認！`);
-                    return;
-                }
-                // 確保 brand_id 攜帶品牌名稱或 ID 傳回後端
+            if (!e.is_adjustment && (e.model_name || e.specs)) {
                 if (!e.brand_id) {
-                    e.brand_id = e.brand_name;
+                    alert(`第 ${i + 1} 項設備未選擇品牌，請確認！`);
+                    return;
                 }
             }
         }
@@ -383,9 +442,44 @@ watch(() => form.type, (t) => {
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" class="w-full border-amber-300"/></div>
                             </div>
                             <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="relative"><InputLabel value="品牌" /><TextInput v-model="equip.brand_name" @input="searchBrands(i, equip.brand_name)" @keydown.enter.prevent class="w-full" /><ul v-if="brandSuggestions.length > 0 && brandSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="b in brandSuggestions" :key="b.id" @click="selectBrand(i, b)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">{{ b.name }}</li></ul></div>
-                                <div class="relative"><InputLabel value="型號" /><TextInput v-model="equip.model_name" @input="searchEquipments(i, equip.model_name)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
-                                <div class="relative"><InputLabel value="規格" /><TextInput v-model="equip.specs" @input="searchEquipments(i, equip.specs)" @keydown.enter.prevent class="w-full" /><ul v-if="equipmentSuggestions.length > 0 && equipmentSuggestions[0].targetIndex === i" class="absolute z-[100] w-full bg-white border rounded shadow-lg mt-1"><li v-for="e in equipmentSuggestions" :key="e.id" @click="selectEquipment(i, e)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">[{{e.brand?.name}}] {{e.model_name}} - {{e.specs}}</li></ul></div>
+                                <div>
+                                    <InputLabel value="品牌" />
+                                    <select :value="equip.brand_id" @change="onBrandChange(i, $event.target.value)"
+                                            class="w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-400 focus:border-blue-400">
+                                        <option value="">請選擇品牌…</option>
+                                        <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <div class="flex items-center justify-between">
+                                        <InputLabel value="系列" />
+                                        <button type="button" @click="toggleManual(i)" class="text-xs text-gray-400 hover:text-blue-600">
+                                            {{ equip.manual ? '改用選單' : '手動輸入' }}
+                                        </button>
+                                    </div>
+                                    <select v-if="!equip.manual" :value="equip.model_name" @change="onSeriesChange(i, $event.target.value)"
+                                            :disabled="!equip.brand_id"
+                                            class="w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-400 focus:border-blue-400 disabled:bg-gray-100">
+                                        <option value="">{{ equip.brand_id ? '請選擇系列…' : '請先選品牌' }}</option>
+                                        <option v-for="s in seriesFor(equip.brand_id)" :key="s" :value="s">{{ s }}</option>
+                                    </select>
+                                    <TextInput v-else v-model="equip.model_name" @keydown.enter.prevent class="w-full mt-1" placeholder="系列名稱" />
+                                </div>
+
+                                <div>
+                                    <InputLabel value="規格" />
+                                    <select v-if="!equip.manual" :value="currentSpecId(equip)" @change="onSpecChange(i, $event.target.value)"
+                                            :disabled="!equip.model_name"
+                                            class="w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-400 focus:border-blue-400 disabled:bg-gray-100">
+                                        <option value="">{{ equip.model_name ? '請選擇規格…' : '請先選系列' }}</option>
+                                        <option v-for="e in specsFor(equip.brand_id, equip.model_name)" :key="e.id" :value="e.id">
+                                            {{ e.specs }}　${{ Number(e.default_sale_price).toLocaleString() }}
+                                        </option>
+                                    </select>
+                                    <TextInput v-else v-model="equip.specs" @keydown.enter.prevent class="w-full mt-1" placeholder="規格代碼" />
+                                </div>
+
                                 <div class="grid grid-cols-2 gap-2"><div><InputLabel value="進價" /><TextInput type="number" v-model="equip.cost_price" @keydown.enter.prevent class="w-full bg-gray-100" /></div><div><InputLabel value="售價" /><TextInput type="number" v-model="equip.sale_price" @keydown.enter.prevent class="w-full border-blue-200" /></div></div>
                                 <div class="grid grid-cols-2 gap-2"><div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div><div><InputLabel value="單位" /><TextInput v-model="equip.unit" @keydown.enter.prevent class="w-full" placeholder="台" /></div></div>
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" @keydown.enter.prevent class="w-full"/></div>

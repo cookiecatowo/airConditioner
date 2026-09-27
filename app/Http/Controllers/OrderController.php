@@ -76,7 +76,8 @@ class OrderController extends Controller
     public function create()
     {
         return Inertia::render('Orders/Create', [
-            'brands' => Brand::all()
+            'brands'  => Brand::all(),
+            'catalog' => $this->equipmentCatalog(),
         ]);
     }
 
@@ -96,9 +97,17 @@ class OrderController extends Controller
         $order = $this->loadOrderFullDetails($order);
 
         return Inertia::render('Orders/Edit', [
-            'order' => $order,
-            'brands' => Brand::all()
+            'order'   => $order,
+            'brands'  => Brand::all(),
+            'catalog' => $this->equipmentCatalog(),
         ]);
+    }
+
+    /** 設備選單用：品牌 → 系列 → 規格 的完整清單 */
+    private function equipmentCatalog()
+    {
+        return Equipment::orderBy('model_name')->orderBy('specs')
+            ->get(['id', 'brand_id', 'model_name', 'specs', 'default_cost_price', 'default_sale_price']);
     }
 
     private function loadOrderFullDetails(Order $order)
@@ -612,6 +621,9 @@ class OrderController extends Controller
     }
     public function searchBrands(Request $request) { return Brand::where('name', 'like', "%{$request->q}%")->limit(10)->get(); }
     public function searchEquipments(Request $request) {
+        // 下拉選單需求：選了品牌就算沒打關鍵字也要列出該品牌全部
+        if (! $request->brand_id && ! $request->q) return [];
+
         $query = Equipment::with('brand');
         if ($request->brand_id) $query->where('brand_id', $request->brand_id);
         if ($request->q) {
@@ -620,7 +632,7 @@ class OrderController extends Controller
                 $query->where(function($q) use ($kw) { $q->where('model_name', 'like', "%{$kw}%")->orWhere('specs', 'like', "%{$kw}%"); });
             }
         }
-        return $query->limit(20)->get();
+        return $query->orderBy('specs')->limit(200)->get();
     }
     public function searchMaterials(Request $request) {
         $query = Material::query();
