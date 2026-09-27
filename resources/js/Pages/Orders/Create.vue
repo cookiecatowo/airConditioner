@@ -124,11 +124,11 @@ const checkAndAddMaterialRow = (index) => {
 
 // --- 操作 ---
 const addEquipment = () => {
-    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: false });
+    form.equipments.push({ id: null, brand_id: '', brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: false, plan_group: '' });
 };
 
 const addAdjustmentEquipment = () => {
-    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: true });
+    form.equipments.push({ id: null, brand_id: null, brand_name: '', model_name: '', specs: '', cost_price: 0, sale_price: 0, quantity: 1, unit: '台', item_note: '', is_adjustment: true, plan_group: '' });
 };
 
 const removeEquipment = (index) => {
@@ -153,7 +153,57 @@ const visibleMaterials = computed(() => form.materials.filter(m => m.name || m.i
 
 const equipmentsTotal = computed(() => visibleEquipments.value.reduce((sum, e) => sum + (parseFloat(e.sale_price || 0) * parseInt(e.quantity || 1)), 0));
 const materialsTotal = computed(() => visibleMaterials.value.reduce((sum, m) => sum + (parseFloat(m.unit_price || 0) * parseInt(m.quantity || 1)), 0));
-const totalAmount = computed(() => (form.type === 'install' ? equipmentsTotal.value : 0) + materialsTotal.value);
+// 編輯畫面用：把設備依方案收成一組一組
+const equipmentGroups = computed(() => {
+    const out = [];
+    form.equipments.forEach((e, i) => {
+        const name = (e.plan_group || "").trim();
+        let g = out.find(x => x.name === name);
+        if (!g) { g = { name, key: name || "__none__", indices: [], subtotal: 0 }; out.push(g); }
+        g.indices.push(i);
+        g.subtotal += parseFloat(e.sale_price || 0) * parseInt(e.quantity || 1);
+    });
+    return out;
+});
+
+const renameGroup = (grp, name) => {
+    const v = (name || "").trim();
+    grp.indices.forEach(i => { form.equipments[i].plan_group = v; });
+};
+
+const addToGroup = (name) => {
+    form.equipments.push({ id: null, brand_id: "", brand_name: "", model_name: "", specs: "",
+        cost_price: 0, sale_price: 0, quantity: 1, unit: "台", item_note: "",
+        is_adjustment: false, plan_group: name });
+};
+
+const addPlanGroup = () => {
+    const n = prompt("方案名稱（例如：大金、禾聯）");
+    if (n && n.trim()) addToGroup(n.trim());
+};
+
+const removeGroup = (grp) => {
+    if (!confirm(`確定刪除「」這一組共  項設備嗎？`)) return;
+    form.equipments = form.equipments.filter(e => (e.plan_group || "").trim() !== grp.name);
+};
+
+// 方案分組：填了方案名稱的設備自成一組，客戶二選一
+const planGroups = computed(() => {
+    const m = new Map();
+    visibleEquipments.value.forEach(e => {
+        const g = (e.plan_group || "").trim();
+        if (!g) return;
+        m.set(g, (m.get(g) || 0) + parseFloat(e.sale_price || 0) * parseInt(e.quantity || 1));
+    });
+    return [...m.entries()].map(([name, amount]) => ({ name, amount }));
+});
+const planNames = computed(() => planGroups.value.map(p => p.name));
+const ungroupedEquipTotal = computed(() => visibleEquipments.value
+    .filter(e => !(e.plan_group || "").trim())
+    .reduce((s, e) => s + parseFloat(e.sale_price || 0) * parseInt(e.quantity || 1), 0));
+const baseTotal = computed(() => (form.type === "install" ? ungroupedEquipTotal.value : 0) + materialsTotal.value);
+const undecided = computed(() => form.type === "install" && planGroups.value.length >= 2);
+const totalAmount = computed(() => baseTotal.value + planGroups.value.reduce((s, p) => s + p.amount, 0));
 
 // --- 拖移 ---
 const dragItem = ref(null);
@@ -162,7 +212,9 @@ const onDragStart = (i) => dragItem.value = i;
 const onDragEnter = (i) => dragOverItem.value = i;
 const onDragEnd = () => {
     if (dragItem.value !== null && dragOverItem.value !== null) {
+        const targetPlan = form.equipments[dragOverItem.value]?.plan_group ?? "";
         const item = form.equipments.splice(dragItem.value, 1)[0];
+        item.plan_group = targetPlan;
         form.equipments.splice(dragOverItem.value, 0, item);
     }
     dragItem.value = null; dragOverItem.value = null;
@@ -291,14 +343,38 @@ watch(() => form.type, (t) => {
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h3 class="text-lg font-bold">設備清單</h3>
                         <div class="flex gap-2">
+                            <SecondaryButton @click="addPlanGroup" class="!bg-blue-50">+ 新方案</SecondaryButton>
                             <SecondaryButton @click="addAdjustmentEquipment" class="!bg-amber-50">+ 調整項</SecondaryButton>
                             <SecondaryButton @click="addEquipment">+ 新項目</SecondaryButton>
                         </div>
                     </div>
-                    <div v-for="(equip, i) in form.equipments" :key="i" @dragover.prevent @dragenter="onDragEnter(i)" class="mb-4 p-4 bg-gray-50 rounded-lg relative flex gap-4 items-start border border-transparent transition" :class="{'border-blue-300 bg-blue-50/30': dragOverItem === i}">
-                        <!-- 拖曳手把 -->
+
+                    <p v-if="equipmentGroups.length > 1" class="text-xs text-gray-500 mb-4 bg-blue-50 border border-blue-100 rounded px-3 py-2">
+                        同一個方案的設備收在同一框裡，各自結算小計。<strong>不同方案的金額不會互相加總</strong>，是給客戶二選一的。
+                        把項目拖到別的框，就會換到那個方案。
+                    </p>
+
+                    <div v-for="grp in equipmentGroups" :key="grp.key"
+                         class="mb-5 rounded-lg border"
+                         :class="grp.name ? 'border-blue-300 bg-blue-50/20' : 'border-gray-200 bg-gray-50/40'">
+                        <div class="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b"
+                             :class="grp.name ? 'border-blue-200' : 'border-gray-200'">
+                            <label class="text-xs font-semibold shrink-0" :class="grp.name ? 'text-blue-700' : 'text-gray-500'">方案</label>
+                            <input :value="grp.name" @change="renameGroup(grp, $event.target.value)"
+                                   list="planGroupList" placeholder="留空＝一般設備"
+                                   class="text-sm font-semibold border-gray-300 rounded px-2 py-1 w-44 focus:ring-blue-400 focus:border-blue-400" />
+                            <span class="text-sm text-gray-600">小計 <span class="font-bold text-blue-700">${{ grp.subtotal }}</span></span>
+                            <span class="text-xs text-gray-400">{{ grp.indices.length }} 項</span>
+                            <div class="ml-auto flex gap-2">
+                                <button type="button" @click="addToGroup(grp.name)" class="px-2 py-1 text-xs text-blue-600 border border-blue-200 rounded hover:bg-blue-50 transition">+ 加入此組</button>
+                                <button v-if="grp.name" type="button" @click="removeGroup(grp)" class="px-2 py-1 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50 transition">刪除整組</button>
+                            </div>
+                        </div>
+
+                        <div class="p-3 space-y-3">
+                    <template v-for="i in grp.indices" :key="i">
+                    <div v-for="equip in [form.equipments[i]]" :key="'eq'+i" @dragover.prevent @dragenter="onDragEnter(i)" class="p-4 bg-white rounded-lg relative flex gap-4 items-start border border-transparent transition" :class="{'border-blue-400 bg-blue-50/40': dragOverItem === i}">
                         <div draggable="true" @dragstart="onDragStart(i)" @dragend="onDragEnd" class="cursor-grab active:cursor-grabbing p-2 text-gray-400 hover:text-blue-500 text-xl select-none">⠿</div>
-                        
                         <div class="flex-1 relative">
                             <button @click="removeEquipment(i)" type="button" class="absolute -top-2 -right-2 text-red-400 text-xs hover:text-red-600">移除</button>
                             <div v-if="equip.is_adjustment" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -314,6 +390,9 @@ watch(() => form.type, (t) => {
                                 <div class="grid grid-cols-2 gap-2"><div><InputLabel value="數量" /><TextInput type="number" v-model="equip.quantity" @keydown.enter.prevent class="w-full" /></div><div><InputLabel value="單位" /><TextInput v-model="equip.unit" @keydown.enter.prevent class="w-full" placeholder="台" /></div></div>
                                 <div><InputLabel value="項目備註" /><TextInput v-model="equip.item_note" @keydown.enter.prevent class="w-full"/></div>
                             </div>
+                        </div>
+                    </div>
+                    </template>
                         </div>
                     </div>
                 </div>
@@ -374,7 +453,13 @@ watch(() => form.type, (t) => {
                                     <td colspan="4" class="border border-black px-2 py-1">{{ materialsTotal }}</td>
                                 </tr>
                             </template>
-                            <tr class="border border-black font-black text-lg bg-blue-50/30">
+                            <template v-if="undecided">
+                                <tr v-for="p in planGroups" :key="p.name" class="border border-black font-black bg-blue-50/30">
+                                    <td colspan="3" class="border border-black py-2 text-center">選「{{ p.name }}」總計</td>
+                                    <td colspan="4" class="border border-black px-2 py-2 text-blue-700 font-bold">${{ baseTotal + p.amount }}</td>
+                                </tr>
+                            </template>
+                            <tr v-else class="border border-black font-black text-lg bg-blue-50/30">
                                 <td colspan="3" class="border border-black py-2 text-center">總計</td>
                                 <td colspan="4" class="border border-black px-2 py-2 text-blue-700 font-bold">${{ totalAmount }}</td>
                             </tr>
@@ -385,8 +470,17 @@ watch(() => form.type, (t) => {
                 <!-- 總計 -->
                 <div class="bg-white p-6 shadow sm:rounded-lg flex justify-between items-center">
                     <div class="w-2/3"><InputLabel value="後台備註" /><textarea v-model="form.notes" class="w-full mt-1 border-gray-300 rounded-md shadow-sm h-16"></textarea></div>
-                    <div class="text-right"><p class="text-sm text-gray-500">預估總金額</p><p class="text-3xl font-black text-blue-600">${{ totalAmount }}</p><PrimaryButton :disabled="form.processing" class="mt-4">建立並產生 Word</PrimaryButton></div>
+                    <div class="text-right">
+                        <template v-if="undecided">
+                            <p class="text-sm text-amber-600 font-semibold">客戶尚未選定方案</p>
+                            <p v-for="p in planGroups" :key="p.name" class="text-lg font-bold text-blue-600">選「{{ p.name }}」 ${{ baseTotal + p.amount }}</p>
+                        </template>
+                        <template v-else>
+                            <p class="text-sm text-gray-500">預估總金額</p>
+                            <p class="text-3xl font-black text-blue-600">${{ totalAmount }}</p>
+                        </template><PrimaryButton :disabled="form.processing" class="mt-4">建立並產生 Word</PrimaryButton></div>
                 </div>
+            <datalist id="planGroupList"><option v-for="n in planNames" :key="n" :value="n" /></datalist>
             </form>
         </div></div>
     </AuthenticatedLayout>

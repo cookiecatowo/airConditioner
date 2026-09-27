@@ -134,6 +134,7 @@ class OrderController extends Controller
                     'is_adjustment' => $item->is_adjustment,
                     'item_note' => $item->item_note,
                     'custom_model_name' => $item->custom_model_name,
+                    'plan_group' => $item->plan_group,
                 ];
                 $obj->brand = $item->brand_id ? (object)['id' => $item->brand_id, 'name' => $item->brand_name] : null;
                 return $obj;
@@ -252,6 +253,8 @@ class OrderController extends Controller
     private function syncOrderItems($order, $request)
     {
         $totalAmount = 0;
+        // 設備依「方案」分組小計，'' 代表未分組（一律計入）
+        $planTotals = [];
 
         // 設備
         if ($request->type === 'install' && !empty($request->equipments)) {
@@ -268,10 +271,12 @@ class OrderController extends Controller
                         'unit' => $item['unit'] ?? '台',
                         'is_adjustment' => true,
                         'item_note' => $item['item_note'] ?? '',
+                        'plan_group' => $item['plan_group'] ?: null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    $totalAmount += ($item['sale_price'] ?? 0);
+                    $group = trim($item['plan_group'] ?? '');
+                    $planTotals[$group] = ($planTotals[$group] ?? 0) + ($item['sale_price'] ?? 0);
                 } else {
                     $specs = !empty($item['specs']) ? $item['specs'] : null;
                     
@@ -295,10 +300,13 @@ class OrderController extends Controller
                         'unit' => $item['unit'] ?? '台',
                         'is_adjustment' => false,
                         'item_note' => $item['item_note'] ?? '',
+                        'plan_group' => $item['plan_group'] ?: null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    $totalAmount += ($item['sale_price'] ?? 0) * ($item['quantity'] ?? 1);
+                    $group = trim($item['plan_group'] ?? '');
+                    $planTotals[$group] = ($planTotals[$group] ?? 0)
+                        + ($item['sale_price'] ?? 0) * ($item['quantity'] ?? 1);
                 }
             }
         }
@@ -342,7 +350,16 @@ class OrderController extends Controller
             }
         }
 
-        $order->update(['total_amount' => $totalAmount]);
+        // $totalAmount 此時只含材料；設備依方案另計
+        $named = array_filter($planTotals, fn ($k) => $k !== '', ARRAY_FILTER_USE_KEY);
+        $totalAmount += $planTotals[''] ?? 0;
+
+        // 兩個以上方案代表客戶還沒選，金額未定
+        $undecided = count($named) >= 2;
+        $order->update([
+            'total_amount'   => $undecided ? 0 : $totalAmount + array_sum($named),
+            'plan_undecided' => $undecided,
+        ]);
     }
 
     public function quickEdit(Request $request, Order $order)
@@ -464,14 +481,23 @@ class OrderController extends Controller
         }
 
         $cellStyleCentered = ['valign' => 'center'];
+        $planSubtotals = [];
+        $materialsSubtotal = 0;
 
         // 安裝設備部分
         if ($order->type === 'install' && count($order->equipments) > 0) {
+            // 依方案分組（保持原順序），未填方案的歸同一組
+            $groups = [];
+            foreach ($order->equipments as $eq) {
+                $groups[trim($eq->pivot->plan_group ?? '')][] = $eq;
+            }
+
+            foreach ($groups as $planName => $items) {
             $subtotal = 0;
-            foreach ($order->equipments as $i => $eq) {
+            foreach ($items as $i => $eq) {
                 $table->addRow();
                 if ($i === 0) {
-                    $table->addCell(800, ['vMerge' => 'restart', 'bgColor' => 'F9F9F9', 'valign' => 'center'])->addText('', ['size' => $tableFontSize], $pStyleCentered);
+                    $table->addCell(800, ['vMerge' => 'restart', 'bgColor' => 'F9F9F9', 'valign' => 'center'])->addText((string) $planName, ['size' => $tableFontSize], $pStyleCentered);
                 } else {
                     $table->addCell(800, ['vMerge' => 'continue']);
                 }
@@ -493,6 +519,8 @@ class OrderController extends Controller
             $table->addCell(800, ['vMerge' => 'continue']);
             $table->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText('小計', ['size' => $tableFontSize], $pStyleCentered);
             $table->addCell(5200, ['gridSpan' => 4, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText(number_format($subtotal), ['size' => $tableFontSize], $pStyleCentered);
+            $planSubtotals[(string) $planName] = $subtotal;
+            }
         }
 
         // 材料與工資部分
@@ -523,12 +551,24 @@ class OrderController extends Controller
             $table->addCell(800, ['vMerge' => 'continue']);
             $table->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText('小計', ['size' => $tableFontSize], $pStyleCentered);
             $table->addCell(5200, ['gridSpan' => 4, 'bgColor' => 'F2F2F2', 'valign' => 'center'])->addText(number_format($subtotal), ['size' => $tableFontSize], $pStyleCentered);
+            $materialsSubtotal = $subtotal;
         }
 
-        // 總計列
-        $table->addRow();
-        $table->addCell(5800, ['gridSpan' => 3, 'valign' => 'center'])->addText('總計', ['size' => 14], $pStyleCentered);
-        $table->addCell(5200, ['gridSpan' => 4, 'valign' => 'center'])->addText(number_format($order->total_amount), ['size' => 14], $pStyleCentered);
+        // 總計列：有兩個以上具名方案時，逐一列出各方案總價
+        $named = array_filter($planSubtotals, fn ($k) => $k !== '', ARRAY_FILTER_USE_KEY);
+        $base  = $materialsSubtotal + ($planSubtotals[''] ?? 0);
+
+        if (count($named) >= 2) {
+            foreach ($named as $planName => $amount) {
+                $table->addRow();
+                $table->addCell(5800, ['gridSpan' => 3, 'valign' => 'center'])->addText("選「{$planName}」總計", ['size' => 14], $pStyleCentered);
+                $table->addCell(5200, ['gridSpan' => 4, 'valign' => 'center'])->addText(number_format($base + $amount), ['size' => 14], $pStyleCentered);
+            }
+        } else {
+            $table->addRow();
+            $table->addCell(5800, ['gridSpan' => 3, 'valign' => 'center'])->addText('總計', ['size' => 14], $pStyleCentered);
+            $table->addCell(5200, ['gridSpan' => 4, 'valign' => 'center'])->addText(number_format($order->total_amount), ['size' => 14], $pStyleCentered);
+        }
 
         // 4. 頁尾資訊
         $section->addText("1. 本報價單不含5%營業稅", ['size' => 12], ['spaceBefore' => 120]);

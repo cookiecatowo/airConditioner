@@ -28,6 +28,31 @@ const equipmentsTotal = computed(() => {
     return props.order.equipments.reduce((sum, e) => sum + (parseFloat(e.pivot.sale_price || 0) * parseInt(e.pivot.quantity || 1)), 0);
 });
 
+const lineTotal = (e) => parseFloat(e.pivot.sale_price || 0) * parseInt(e.pivot.quantity || 1);
+
+// 設備依方案分組（保持原順序），未填方案的歸在同一組
+const equipmentPlans = computed(() => {
+    const groups = [];
+    props.order.equipments.forEach((e) => {
+        const name = (e.pivot.plan_group || '').trim();
+        let g = groups.find((x) => x.name === name);
+        if (!g) { g = { name, items: [], subtotal: 0 }; groups.push(g); }
+        g.items.push(e);
+        g.subtotal += lineTotal(e);
+    });
+    return groups;
+});
+
+// 兩組以上具名方案 = 客戶還沒選，金額未定
+const namedPlans = computed(() => equipmentPlans.value.filter((g) => g.name !== ''));
+const undecided = computed(() => props.order.type === 'install' && namedPlans.value.length >= 2);
+
+// 兩案共用的部分：材料 + 未分組設備
+const baseTotal = computed(() => {
+    const ungrouped = equipmentPlans.value.find((g) => g.name === '');
+    return materialsTotal.value + (props.order.type === 'install' && ungrouped ? ungrouped.subtotal : 0);
+});
+
 // 材料小計
 const materialsTotal = computed(() => {
     return props.order.materials.reduce((sum, m) => sum + (parseFloat(m.pivot.unit_price || 0) * parseInt(m.pivot.quantity || 1)), 0);
@@ -303,9 +328,10 @@ const deletePhoto = (photo) => {
                             <tbody>
                                 <!-- 安裝設備部分 -->
                                 <template v-if="order.type === 'install' && order.equipments.length > 0">
-                                    <tr v-for="(eq, i) in order.equipments" :key="'e'+i">
-                                        <td v-if="i === 0" :rowspan="order.equipments.length + 1" class="border border-black px-1 py-2 bg-gray-50/30"></td>
-                                        
+                                  <template v-for="(grp, gi) in equipmentPlans" :key="'g'+gi">
+                                    <tr v-for="(eq, i) in grp.items" :key="'e'+gi+'-'+i">
+                                        <td v-if="i === 0" :rowspan="grp.items.length + 1" class="border border-black px-1 py-2 bg-gray-50/30 text-[11px] font-bold leading-tight">{{ grp.name }}</td>
+
                                         <template v-if="eq.pivot.is_adjustment">
                                             <td colspan="2" class="border border-black px-3 py-1.5 font-bold">{{ eq.pivot.custom_model_name }}</td>
                                             <td colspan="3" class="border border-black px-3 py-1.5 font-bold">{{ formatCurrency(eq.pivot.sale_price) }}</td>
@@ -321,8 +347,9 @@ const deletePhoto = (photo) => {
                                     </tr>
                                     <tr class="bg-gray-50 font-bold">
                                         <td colspan="2" class="bg-gray-100 border border-black px-2 py-1.5 tracking-[1em]">小計</td>
-                                        <td colspan="4" class="bg-gray-100 border border-black px-2 py-1.5">{{ formatCurrency(equipmentsTotal) }}</td>
+                                        <td colspan="4" class="bg-gray-100 border border-black px-2 py-1.5">{{ formatCurrency(grp.subtotal) }}</td>
                                     </tr>
+                                  </template>
                                 </template>
 
                                 <!-- 材料與工資部分 -->
@@ -350,7 +377,13 @@ const deletePhoto = (photo) => {
                                 </template>
 
                                 <!-- 總計總額 -->
-                                <tr class="font-black text-[15px] bg-white">
+                                <template v-if="undecided">
+                                    <tr v-for="p in namedPlans" :key="'t'+p.name" class="font-black text-[15px] bg-white">
+                                        <td colspan="3" class="border-[1.5px] border-black px-2 py-3">選「{{ p.name }}」總計</td>
+                                        <td colspan="4" class="border-[1.5px] border-black px-2 py-3 text-blue-800">{{ formatCurrency(baseTotal + p.subtotal) }}</td>
+                                    </tr>
+                                </template>
+                                <tr v-else class="font-black text-[15px] bg-white">
                                     <td colspan="3" class="border-[1.5px] border-black px-2 py-3 tracking-[2em]">總計</td>
                                     <td colspan="4" class="border-[1.5px] border-black px-2 py-3 text-blue-800">{{ formatCurrency(order.total_amount) }}</td>
                                 </tr>

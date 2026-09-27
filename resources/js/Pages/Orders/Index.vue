@@ -187,7 +187,10 @@ const updateStatus = (orderId, field, value) => {
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ order.customer.name }}</td>
                                         <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">{{ order.address }}</td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">${{ order.total_amount }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-bold">
+                                            <span v-if="order.plan_undecided" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">未定</span>
+                                            <span v-else class="text-blue-600">${{ order.total_amount }}</span>
+                                        </td>
 
                                         <!-- 處理狀況 -->
                                         <td class="px-4 py-4 whitespace-nowrap text-center">
