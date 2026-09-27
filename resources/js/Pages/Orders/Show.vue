@@ -28,6 +28,15 @@ const equipmentsTotal = computed(() => {
     return props.order.equipments.reduce((sum, e) => sum + (parseFloat(e.pivot.sale_price || 0) * parseInt(e.pivot.quantity || 1)), 0);
 });
 
+// 品名＝品牌＋系列，但系列名稱已含品牌時不重複加
+const productName = (brand, series) => {
+    const b = (brand || '').trim();
+    const s = (series || '').trim();
+    if (!b) return s;
+    if (!s) return b;
+    return s.includes(b) ? s : b + ' ' + s;
+};
+
 const lineTotal = (e) => parseFloat(e.pivot.sale_price || 0) * parseInt(e.pivot.quantity || 1);
 
 // 設備依方案分組（保持原順序），未填方案的歸在同一組
@@ -337,9 +346,9 @@ const deletePhoto = (photo) => {
                                             <td colspan="3" class="border border-black px-3 py-1.5 font-bold">{{ formatCurrency(eq.pivot.sale_price) }}</td>
                                         </template>
                                         <template v-else>
-                                            <td class="border border-black px-2 py-1.5">{{ eq.model_name }}</td>
+                                            <td class="border border-black px-2 py-1.5">{{ productName(eq.brand?.name, eq.model_name) }}</td>
                                             <td class="border border-black px-2 py-1.5">{{ eq.specs || '　' }}</td>
-                                            <td class="border border-black px-1 py-1.5">{{ eq.pivot.quantity }} 台</td>
+                                            <td class="border border-black px-1 py-1.5">{{ eq.pivot.quantity }} {{ eq.pivot.unit || '台' }}</td>
                                             <td class="border border-black px-2 py-1.5">{{ formatCurrency(eq.pivot.sale_price) }}</td>
                                             <td class="border border-black px-2 py-1.5">{{ formatCurrency(eq.pivot.sale_price * eq.pivot.quantity) }}</td>
                                         </template>

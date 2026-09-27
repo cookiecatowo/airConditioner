@@ -167,6 +167,8 @@ const onSpecChange = (index, equipmentId) => {
     row.specs = e.specs;
     row.cost_price = e.default_cost_price;
     row.sale_price = e.default_sale_price;
+    // 合併型號（室內外機一整套）算「組」，單獨的內機或外機算「台」
+    row.unit = String(e.specs || '').includes('/') ? '組' : '台';
 };
 
 // 編輯既有訂單時，用品牌＋系列＋規格反查目前選到哪一筆
@@ -235,6 +237,14 @@ const removeMaterial = (index) => {
 };
 
 // --- 計算 ---
+// 品名＝品牌＋系列，但系列名稱已含品牌時不重複加
+const productName = (brand, series) => {
+    const b = (brand || '').trim();
+    const s = (series || '').trim();
+    if (!b) return s;
+    if (!s) return b;
+    return s.includes(b) ? s : b + ' ' + s;
+};
 
 const visibleEquipments = computed(() => form.equipments.filter(e => e.model_name || e.is_adjustment));
 const visibleMaterials = computed(() => form.materials.filter(m => m.name || m.is_adjustment));
@@ -538,7 +548,7 @@ watch(() => form.type, (t) => {
                                 <tr v-for="(eq, i) in visibleEquipments" :key="'e'+i" class="border border-black">
                                     <td v-if="i===0" :rowspan="visibleEquipments.length + 1" class="border border-black py-1"></td>
                                     <template v-if="eq.is_adjustment"><td colspan="2" class="border border-black py-1">{{ eq.model_name }}</td><td colspan="3" class="border border-black py-1 font-bold">{{ eq.sale_price }}</td></template>
-                                    <template v-else><td class="border border-black py-1">{{ eq.model_name }}</td><td class="border border-black py-1">{{ eq.specs }}</td><td class="border border-black py-1">{{ eq.quantity }} {{ eq.unit || '台' }}</td><td class="border border-black py-1">{{ eq.sale_price }}</td><td class="border border-black py-1">{{ eq.sale_price * eq.quantity }}</td></template>
+                                    <template v-else><td class="border border-black py-1">{{ productName(eq.brand_name, eq.model_name) }}</td><td class="border border-black py-1">{{ eq.specs }}</td><td class="border border-black py-1">{{ eq.quantity }} {{ eq.unit || '台' }}</td><td class="border border-black py-1">{{ eq.sale_price }}</td><td class="border border-black py-1">{{ eq.sale_price * eq.quantity }}</td></template>
                                     <td class="border border-black py-1">{{ eq.item_note }}</td>
                                 </tr>
                                 <tr class="border border-black font-bold bg-gray-50/50">

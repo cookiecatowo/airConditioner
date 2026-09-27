@@ -515,7 +515,12 @@ class OrderController extends Controller
                     $table->addCell(5000, ['gridSpan' => 2, 'valign' => 'center'])->addText($eq->pivot->custom_model_name, ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(3400, ['gridSpan' => 3, 'valign' => 'center'])->addText(number_format($eq->pivot->sale_price), ['size' => $tableFontSize], $pStyleCentered);
                 } else {
-                    $table->addCell(3000, $cellStyleCentered)->addText($eq->model_name, ['size' => $tableFontSize], $pStyleCentered);
+                    // 品名＝品牌＋系列，但系列名稱已含品牌時不重複加
+                    $brandName   = $eq->brand->name ?? '';
+                    $productName = ($brandName !== '' && ! str_contains((string) $eq->model_name, $brandName))
+                        ? trim($brandName . ' ' . $eq->model_name)
+                        : (string) $eq->model_name;
+                    $table->addCell(3000, $cellStyleCentered)->addText($productName, ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(2000, $cellStyleCentered)->addText($eq->specs, ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(1000, $cellStyleCentered)->addText($eq->pivot->quantity . ' ' . ($eq->pivot->unit ?? '台'), ['size' => $tableFontSize], $pStyleCentered);
                     $table->addCell(1200, $cellStyleCentered)->addText(number_format($eq->pivot->sale_price), ['size' => $tableFontSize], $pStyleCentered);
