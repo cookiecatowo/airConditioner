@@ -5,6 +5,10 @@ services:
       dockerfile: Dockerfile
     container_name: air-app
     restart: always
+    environment:
+      # 固定使用主機 .env 的金鑰。若讓映像檔自己產生，每次重建都會換一把，
+      # 瀏覽器的登入憑證就會失效（「記住我」永遠不會生效）。
+      APP_KEY: ${APP_KEY:?請在專案根目錄的 .env 設定 APP_KEY}
     ports:
       - "80:8080"
     volumes:
