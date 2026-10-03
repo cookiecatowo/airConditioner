@@ -21,5 +21,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // 訂單存檔後同步產生 Word 備查檔
+        \App\Models\Order::observe(\App\Observers\OrderObserver::class);
     }
 }

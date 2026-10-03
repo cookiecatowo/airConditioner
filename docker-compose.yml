@@ -14,6 +14,8 @@ services:
     volumes:
       - ./database:/var/www/html/database
       - ./storage:/var/www/html/storage
+      # 報價單 Word 備查檔，直接存到主機資料夾供離線查詢
+      - ./報價單存檔:/var/www/html/exports
     networks:
       - air-network
 
