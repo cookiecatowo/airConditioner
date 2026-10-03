@@ -77,7 +77,8 @@ class OrderController extends Controller
     {
         return Inertia::render('Orders/Create', [
             'brands'  => Brand::all(),
-            'catalog' => $this->equipmentCatalog(),
+            'catalog'  => $this->equipmentCatalog(),
+            'materialCatalog' => $this->materialCatalog(),
         ]);
     }
 
@@ -99,7 +100,8 @@ class OrderController extends Controller
         return Inertia::render('Orders/Edit', [
             'order'   => $order,
             'brands'  => Brand::all(),
-            'catalog' => $this->equipmentCatalog(),
+            'catalog'  => $this->equipmentCatalog(),
+            'materialCatalog' => $this->materialCatalog(),
         ]);
     }
 
@@ -108,6 +110,13 @@ class OrderController extends Controller
     {
         return Equipment::orderBy('model_name')->orderBy('specs')
             ->get(['id', 'brand_id', 'model_name', 'specs', 'default_cost_price', 'default_sale_price']);
+    }
+
+    /** 材料選單用：讓使用者直接挑一筆加入，不必打字 */
+    private function materialCatalog()
+    {
+        return Material::orderBy('name')->orderBy('specs')
+            ->get(['id', 'name', 'specs', 'unit', 'default_unit_price']);
     }
 
     private function loadOrderFullDetails(Order $order)

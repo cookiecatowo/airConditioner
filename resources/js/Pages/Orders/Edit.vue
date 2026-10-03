@@ -12,6 +12,7 @@ const props = defineProps({
     order: Object,
     brands: Array,
     catalog: Array,
+    materialCatalog: Array,
 });
 
 // 初始化資料轉換
@@ -222,6 +223,28 @@ const addAdjustmentEquipment = () => {
 
 const removeEquipment = (index) => {
     form.equipments.splice(index, 1);
+};
+
+// 從材料庫直接挑一筆加入（誤刪時可補回來）
+const addMaterialFromCatalog = (id) => {
+    const m = props.materialCatalog.find(x => x.id == id);
+    if (!m) return;
+    form.materials.push({
+        id: m.id,
+        name: m.name,
+        specs: m.specs || '',
+        unit: m.unit || '組',
+        unit_price: m.default_unit_price,
+        quantity: 1,
+        item_note: '',
+        is_adjustment: false,
+    });
+};
+
+const materialLabel = (m) => {
+    const parts = [m.name];
+    if (m.specs) parts.push(m.specs);
+    return parts.join(' ') + '　' + (m.unit || '') + ' $' + Number(m.default_unit_price).toLocaleString();
 };
 
 const addMaterial = () => {
@@ -515,7 +538,12 @@ watch(() => form.type, (t) => {
                 <div class="bg-white p-6 shadow sm:rounded-lg">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h3 class="text-lg font-bold">材料與工資細項</h3>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <select :value="''" @change="addMaterialFromCatalog($event.target.value); $event.target.value = ''"
+                                    class="text-sm border-gray-300 rounded-md shadow-sm w-64 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">＋ 從材料庫選一筆加入…</option>
+                                <option v-for="m in materialCatalog" :key="m.id" :value="m.id">{{ materialLabel(m) }}</option>
+                            </select>
                             <button type="button" @click="form.materials = [{ id: null, name: '', specs: '', unit: '組', unit_price: 0, quantity: 1, item_note: '', is_adjustment: false }]" class="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition">清空</button>
                             <SecondaryButton @click="addAdjustmentMaterial" class="!bg-amber-50">+ 調整項</SecondaryButton>
                             <SecondaryButton @click="addMaterial">+ 新項目</SecondaryButton>
